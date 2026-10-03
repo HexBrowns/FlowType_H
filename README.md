@@ -1,5 +1,7 @@
 # FlowType_H
 
+<img src="images/FlowType_H_thumbnail.gif" width="360">
+
 ![GitHub License](https://img.shields.io/github/license/HexBrowns/FlowType_H)
 ![GitHub Last commit](https://img.shields.io/github/last-commit/HexBrowns/FlowType_H)
 ![GitHub Downloads](https://img.shields.io/github/downloads/HexBrowns/FlowType_H/total)
