@@ -5,3 +5,5 @@
 **/build/
 **/release/
 **/compile_commands.json
+dist/
+target/

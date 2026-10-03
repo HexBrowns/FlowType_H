@@ -2,10 +2,10 @@
 requires-astra = ">=0.6.4"
 
 [project]
-name = "FlowType_K"
-version = "0.1.0"
+name = "FlowType_H"
+version = "0.3.0"
 author = "Korarei"
-requires-aviutl2 = "2004900"
+requires-aviutl2 = "2011100"
 
 [build]
 [[build.plugins]]
@@ -35,7 +35,7 @@ artifacts = ["${BUILD_DIRECTORY}/Debug/*.aux2"]
 id = "effect"
 prefix = "@"
 suffix = ".anm2"
-variables = { SOURCE = "./scripts/effects", LABEL = "Text" }
+variables = { SOURCE = "./scripts/effects", LABEL = "HexScript" }
 include-directories = ["${SOURCE}/shaders"]
 sources = [
     { file = "${SOURCE}/motion.lua" },
@@ -50,37 +50,37 @@ sources = [
 [release.package]
 information = "${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}"
 license = "MIT"
-website = "https://github.com/korarei/AviUtl2_FlowType_K_Script"
-report-issue = "https://github.com/korarei/AviUtl2_FlowType_K_Script/issues"
+website = "https://github.com/HexBrowns/FlowType_H"
+report-issue = "https://github.com/HexBrowns/FlowType_H/issues"
 summary = "AviUtl ExEdit2向けテキストアニメーション作成支援ツール"
 description = """
 以下の機能が追加される
 
 アニメーション効果
 
-- Text\\Motion@FlowType_K: 全自動リリックモーション
-- Text\\Island@FlowType_K: パーツ分解
-- Text\\Kerning@FlowType_K: 全自動カーニング
-- Text\\Repeat@FlowType_K: 高機能画像ループ
-- Text\\Trim@FlowType_K: 余白除去
-- Text\\Deform@FlowType_K: 変形
-- Text\\Align@FlowType_K: 整列
-- Text\\Transform@FlowType_K: 座標変換
-- Text\\Blink@FlowType_K: 点滅
-- Text\\Echo@FlowType_K: 残像
+- HexScript\\モーション@FlowType_H: 全自動リリックモーション
+- HexScript\\パーツ分解@FlowType_H: パーツ分解
+- HexScript\\カーニング@FlowType_H: 全自動カーニング
+- HexScript\\リピート@FlowType_H: 高機能画像ループ
+- HexScript\\トリミング@FlowType_H: 余白除去
+- HexScript\\変形@FlowType_H: 変形
+- HexScript\\整列@FlowType_H: 整列
+- HexScript\\トランスフォーム@FlowType_H: 座標変換
+- HexScript\\点滅@FlowType_H: 点滅
+- HexScript\\残像@FlowType_H: 残像
 
 オブジェクトメニュー (オブジェクトを右クリック)
 
-- FlowType_K\\テキストを文字ごとに分解: テキスト分解
+- FlowType_H\\テキストを文字ごとに分解: テキスト分解
 
 プロパティメニュー (オブジェクト設定項目を右クリック)
 
-- FlowType_K\\現在値で上書き: 現在値を指定した区間にコピー
-- FlowType_K\\値を反転: 指定した区間の値を反転 (符号，ON/Off)
-- FlowType_K\\プロパティ名をコピー: 指定した形式でプロパティ名をクリップボードへコピー
-- FlowType_K\\参照式をコピー: 参照式をクリップボードへコピー
+- FlowType_H\\現在値で上書き: 現在値を指定した区間にコピー
+- FlowType_H\\値を反転: 指定した区間の値を反転 (符号，ON/Off)
+- FlowType_H\\プロパティ名をコピー: 指定した形式でプロパティ名をクリップボードへコピー
+- FlowType_H\\参照式をコピー: 参照式をクリップボードへコピー
 
-- FlowType_K\\エフェクトをコピー: 指定した形式でエフェクト情報をクリップボードへコピー
+- FlowType_H\\エフェクトをコピー: 指定した形式でエフェクト情報をクリップボードへコピー
 """
 
 [[release.contents.extensions]]

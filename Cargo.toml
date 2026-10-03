@@ -1,0 +1,34 @@
+[package]
+name = "flowtype-h"
+version = "0.3.0"
+edition = "2021"
+license = "MIT"
+authors = ["HexBrowns"]
+description = "FlowType_H - FlowType_K (Korarei) のプラグイン（C++）の Rust フォーク"
+publish = false
+
+[lib]
+name = "flowtype_h"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aviutl2 = { version = "0.48", features = ["generic", "filter", "module"] }
+# 原作は vcpkg の HarfBuzz（14.2.1）。こちらは harfbuzz-sys が同梱する 8.4.0 をソースからビルドする（C++ コンパイラが要る）
+harfbuzz-sys = { version = "0.8", default-features = false, features = ["bundled"] }
+half = "2"
+parking_lot = "0.12"
+# 原作の RE2 の代わり。どちらも先頭一致優先・後方参照なしで、構文はほぼ同じ
+regex = "1"
+# 原作の toml++ と同じく、表のキーを辞書順で回す（preserve_order を付けない）
+toml = "0.8"
+tracing = "0.1"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_DirectWrite",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
+] }
+
+[profile.release]
+lto = true

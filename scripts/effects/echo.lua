@@ -1,20 +1,20 @@
---@Echo
+--@残像
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Echo@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:残像@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
-local count = 2 --track@count:Count,0,100,2,1
-local interval = 0.0 --track@interval:Interval,-100,100,-1,0.001
-local decay = 50.0 --track@decay:Decay,0,100,50,0.01
-local composite = 0 --select@composite:Composite=1,Above=0,Below=1
---group:Tint
-local tint_source = 0 --select@tint_source:Tint::Source,Image=0,Layer=1
-local tint_image = "" --file@tint_image:Tint::Image,""
-local tint_layer = 0 --track@tint_layer:Tint::Layer,-100,100,0,1,---
---group:Additional Options,false
-local unit = 0 --select@unit:Unit,Frames=0,Seconds=1
-local layer_reference = 0 --select@layer_reference:Layer Reference,Absolute=0,Relative=1
+local count = 2 --track@count:個数,0,100,2,1
+local interval = 0.0 --track@interval:間隔,-100,100,-1,0.001
+local decay = 50.0 --track@decay:減衰,0,100,50,0.01
+local composite = 0 --select@composite:合成順=1,上=0,下=1
+--group:色調
+local tint_source = 0 --select@tint_source:色調::ソース,画像=0,レイヤー=1
+local tint_image = "" --file@tint_image:色調::画像,""
+local tint_layer = 0 --track@tint_layer:色調::レイヤー,-100,100,0,1,---
+--group:追加オプション,false
+local unit = 0 --select@unit:単位,フレーム=0,秒=1
+local layer_reference = 0 --select@layer_reference:レイヤー参照,絶対=0,相対=1
 
 if count < 1 then
     return
@@ -121,7 +121,7 @@ do
 
         if should_load_lut then
             pixelshader(
-                "map@Motion@${SCRIPT_NAME}",
+                "map@モーション@${SCRIPT_NAME}",
                 "object",
                 { "object", CACHE_LUT },
                 { j / (count - 1), 0.5 },

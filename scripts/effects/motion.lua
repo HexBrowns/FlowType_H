@@ -1,97 +1,102 @@
---@Motion
+--@モーション
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Motion@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:モーション@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
-local timing = 0 --select@timing:Timing,Automatic=0,Manual=1
-local duration = 24.0 --track@duration:Duration,-1000,1000,24,0.001,---
-local offset = 0.0 --track@offset:Offset,-1000,1000,0,0.001
---group:Motion
---#define BASED_ON Whole=-2,Objects=-1,Characters=0,Characters Excluding Spaces=1,Words=2,Lines=3
-local motion_based_on = 0 --select@motion_based_on:Motion::Based On,${BASED_ON}
-local motion_order = 0 --select@motion_order:Motion::Order,Forward=0,Reverse=1,Random=2
-local motion_overlap = 100.0 --track@motion_overlap:Motion::Overlap,0,100,100,0.01
-local motion_softness = 0.0 --track@motion_softness:Motion::Softness,0,100,100,0.01
---track0:Motion::Curve,0,1,0,0.001
-local motion_cutoff = 0.0 --track@motion_cutoff:Motion::Cutoff,-10000,10000,0,0.001
-local motion_should_mask = false --checksection@motion_should_mask:Motion::Mask,false,false
---group:Lyric,false
-local lyric_distance = 0.0 --track@lyric_distance:Lyric::Distance,0,10000,0,0.01
-local lyric_stretch = 0.0 --track@lyric_stretch:Lyric::Stretch,-10,10,0,0.001
-local lyric_jitter = 50.0 --track@lyric_jitter:Lyric::Jitter,0,100,50,0.01
---separator:Layout
-local lyric_shape = 0 --select@lyric_shape:Lyric::Layout::Shape,Circle=0,Arc=1
-local lyric_angle = 0.0 --track@lyric_angle:Lyric::Layout::Angle,-3600,3600,0,0.01
-local lyric_sweep = 270.0 --track@lyric_sweep:Lyric::Layout::Sweep,-3600,3600,270,0.01
-local lyric_divisions = 4 --track@lyric_divisions:Lyric::Layout::Divisions,1,36,4,1
-local lyric_selection = 0 --select@lyric_selection:Lyric::Layout::Selection,Random=0,Clockwise=1,Counter-Clockwise=2
---separator:Dynamics
-local lyric_peak = 1.0 --track@lyric_peak:Lyric::Dynamics::Peak,0,100,1,0.001
-local lyric_should_overshoot = false --checksection@lyric_should_overshoot:Lyric::Dynamics::Overshoot,false,false
---group:Transform,false
---separator:Pivot Point
-local xform_pivot_x = 0.0 --track@xform_pivot_x:Transform::Pivot::X,-100000,100000,0,0.01
-local xform_pivot_y = 0.0 --track@xform_pivot_y:Transform::Pivot::Y,-100000,100000,0,0.01
-local xform_pivot_z = 0.0 --track@xform_pivot_z:Transform::Pivot::Z,-100000,100000,0,0.01
---trackgroup@xform_pivot_x,xform_pivot_y,xform_pivot_z:Group::Transform::Pivot
---separator:Position
-local xform_position_x = 0.0 --track@xform_position_x:Transform::Position::X,-100000,100000,0,0.01
-local xform_position_y = 0.0 --track@xform_position_y:Transform::Position::Y,-100000,100000,0,0.01
-local xform_position_z = 0.0 --track@xform_position_z:Transform::Position::Z,-100000,100000,0,0.01
---trackgroup@xform_position_x,xform_position_y,xform_position_z:Group::Transform::Position
---separator:Rotation
-local xform_rotation_w = 0.0 --track@xform_rotation_w:Transform::Rotation::W,-3600,3600,0,0.01
-local xform_rotation_x = 0.0 --track@xform_rotation_x:Transform::Rotation::X,-3600,3600,0,0.01
-local xform_rotation_y = 0.0 --track@xform_rotation_y:Transform::Rotation::Y,-3600,3600,0,0.01
-local xform_rotation_z = 0.0 --track@xform_rotation_z:Transform::Rotation::Z,-3600,3600,0,0.01
---#define EULER XYZ Euler=5,XZY Euler=7,YXZ Euler=11,YZX Euler=15,ZXY Euler=19,ZYX Euler=21
---#define ROTATION_MODES Quaternion=0,Axis Angle=1,${EULER}
-local xform_rotation_mode = 21 --select@xform_rotation_mode:Transform::Rotation::Mode=21,${ROTATION_MODES}
---trackgroup@xform_rotation_x,xform_rotation_y,xform_rotation_z:Group::Transform::Rotation
---separator:Scale
-local xform_scale_x = 100.0 --track@xform_scale_x:Transform::Scale::X,0,10000,100,0.01
-local xform_scale_y = 100.0 --track@xform_scale_y:Transform::Scale::Y,0,10000,100,0.01
-local xform_scale_z = 100.0 --track@xform_scale_z:Transform::Scale::Z,0,10000,100,0.01
---trackgroup@xform_scale_x,xform_scale_y,xform_scale_z:Group::Transform::Scale
---separator:Compositing
-local xform_opacity = 100.0 --track@xform_opacity:Transform::Compositing::Opacity,0,100,100,0.01
---separator:Target
-local xform_target_local_space = true --checksection@xform_target_local_space:Transform::Target::Local Space,true,false
-local xform_target_world_space = false --checksection@xform_target_world_space:Transform::Target::World Space,false,false
---group:Blink,false
-local blink_duration = 0.0 --track@blink_duration:Blink::Duration,0,10000,0,0.001,---
---separator:Opacity
-local blink_opacity_steps = 2 --track@blink_opacity_steps:Blink::Opacity::Steps,2,128,2,1
-local blink_opacity_min = 0.0 --track@blink_opacity_min:Blink::Opacity::Minimum,0,100,0,0.01
-local blink_opacity_max = 100.0 --track@blink_opacity_max:Blink::Opacity::Maximum,0,100,100,0.01
---separator:Scale
-local blink_scale_steps = 2 --track@blink_scale_steps:Blink::Scale::Steps,2,128,2,1
-local blink_scale_min = 100.0 --track@blink_scale_min:Blink::Scale::Minimum,-10000,10000,100,0.01
-local blink_scale_max = 100.0 --track@blink_scale_max:Blink::Scale::Maximum,-10000,10000,100,0.01
---separator:Edge Detection
-local blink_edge_intensity = 100.0 --track@blink_edge_intensity:Blink::Edge Detection::Intensity,0,1000,100,0.01
-local blink_edge_threshold = -100.0 --track@blink_edge_threshold:Blink::Edge Detection::Threshold,-100,100,-100,0.01
---separator:Characters
-local blink_characters_pool = "" --string@blink_characters_pool:Blink::Characters::Pool,
-local blink_characters_font = "Noto Sans JP Black" --font@blink_characters_font:Blink::Characters::Font,Noto Sans JP Black
-local blink_characters_scale = 100.0 --track@blink_characters_scale:Blink::Characters::Scale,0,1000,100,0.01
---group:Tint,false
-local tint_source = 0 --select@tint_source:Tint::Source,Image=0,Layer=1
-local tint_image = "" --file@tint_image:Tint::Image,""
-local tint_layer = 0 --track@tint_layer:Tint::Layer,-100,100,0,1,---
---group:Effect,false
-local effect_params = "" --text@effect_params:Effect::Parameters,
---group:Echo,false
-local echo_count = 0 --track@echo_count:Echo::Count,0,100,0,1,---
-local echo_interval = 0.0 --track@echo_interval:Echo::Interval,-100,100,-1,0.001
-local echo_decay = 50.0 --track@echo_decay:Echo::Decay,0,100,50,0.01
-local echo_composite = 1 --select@echo_composite:Echo::Composite=1,Above=0,Below=1
---group:Additional Options,false
-local unit = 0 --select@unit:Unit,Frames=0,Seconds=1
-local layer_reference = 0 --select@layer_reference:Layer Reference,Absolute=0,Relative=1
-local seed = 0 --track@seed:Seed,-10000,10000,0,1
-local should_highlight = false --check@should_highlight:Highlight Overlap,false
+local timing = 0 --select@timing:タイミング,自動=0,手動=1
+local duration = 24.0 --track@duration:時間,-1000,1000,24,0.001,---
+local offset = 0.0 --track@offset:オフセット,-1000,1000,0,0.001
+--group:モーション
+--#define BASED_ON 全体=-2,オブジェクト=-1,文字=0,文字（空白除く）=1,単語=2,行=3
+local motion_based_on = 0 --select@motion_based_on:モーション::基準,${BASED_ON}
+local motion_order = 0 --select@motion_order:モーション::順序,順方向=0,逆方向=1,ランダム=2,中央から=3,外側から=4
+local motion_overlap = 100.0 --track@motion_overlap:モーション::重なり,0,100,100,0.01
+local motion_softness = 0.0 --track@motion_softness:モーション::柔らかさ,0,100,100,0.01
+--track0:モーション::カーブ,0,1,0,0.001
+local motion_cutoff = 0.0 --track@motion_cutoff:モーション::カットオフ,-10000,10000,0,0.001
+local motion_should_mask = false --checksection@motion_should_mask:モーション::マスク,false,false
+--group:リリック,false
+local lyric_distance = 0.0 --track@lyric_distance:リリック::距離,0,10000,0,0.01
+local lyric_stretch = 0.0 --track@lyric_stretch:リリック::伸縮,-10,10,0,0.001
+local lyric_jitter = 50.0 --track@lyric_jitter:リリック::ジッター,0,100,50,0.01
+--separator:レイアウト
+local lyric_shape = 0 --select@lyric_shape:リリック::レイアウト::形状,円=0,円弧=1
+local lyric_angle = 0.0 --track@lyric_angle:リリック::レイアウト::角度,-3600,3600,0,0.01
+local lyric_sweep = 270.0 --track@lyric_sweep:リリック::レイアウト::掃引角,-3600,3600,270,0.01
+local lyric_divisions = 4 --track@lyric_divisions:リリック::レイアウト::分割数,1,36,4,1
+local lyric_selection = 0 --select@lyric_selection:リリック::レイアウト::選択,ランダム=0,時計回り=1,反時計回り=2
+--separator:ダイナミクス
+local lyric_peak = 1.0 --track@lyric_peak:リリック::ダイナミクス::ピーク,0,100,1,0.001
+local lyric_should_overshoot = false --checksection@lyric_should_overshoot:リリック::ダイナミクス::オーバーシュート,false,false
+--group:変形,false
+--separator:ピボット
+local xform_pivot_x = 0.0 --track@xform_pivot_x:変形::ピボット::X,-100000,100000,0,0.01
+local xform_pivot_y = 0.0 --track@xform_pivot_y:変形::ピボット::Y,-100000,100000,0,0.01
+local xform_pivot_z = 0.0 --track@xform_pivot_z:変形::ピボット::Z,-100000,100000,0,0.01
+--trackgroup@xform_pivot_x,xform_pivot_y,xform_pivot_z:Group::変形::ピボット
+--separator:位置
+local xform_position_x = 0.0 --track@xform_position_x:変形::位置::X,-100000,100000,0,0.01
+local xform_position_y = 0.0 --track@xform_position_y:変形::位置::Y,-100000,100000,0,0.01
+local xform_position_z = 0.0 --track@xform_position_z:変形::位置::Z,-100000,100000,0,0.01
+--trackgroup@xform_position_x,xform_position_y,xform_position_z:Group::変形::位置
+--separator:回転
+local xform_rotation_w = 0.0 --track@xform_rotation_w:変形::回転::W,-3600,3600,0,0.01
+local xform_rotation_x = 0.0 --track@xform_rotation_x:変形::回転::X,-3600,3600,0,0.01
+local xform_rotation_y = 0.0 --track@xform_rotation_y:変形::回転::Y,-3600,3600,0,0.01
+local xform_rotation_z = 0.0 --track@xform_rotation_z:変形::回転::Z,-3600,3600,0,0.01
+--#define EULER XYZオイラー=5,XZYオイラー=7,YXZオイラー=11,YZXオイラー=15,ZXYオイラー=19,ZYXオイラー=21
+--#define ROTATION_MODES クォータニオン=0,軸角=1,${EULER}
+local xform_rotation_mode = 21 --select@xform_rotation_mode:変形::回転::モード=21,${ROTATION_MODES}
+--trackgroup@xform_rotation_x,xform_rotation_y,xform_rotation_z:Group::変形::回転
+--separator:スケール
+local xform_scale_x = 100.0 --track@xform_scale_x:変形::スケール::X,0,10000,100,0.01
+local xform_scale_y = 100.0 --track@xform_scale_y:変形::スケール::Y,0,10000,100,0.01
+local xform_scale_z = 100.0 --track@xform_scale_z:変形::スケール::Z,0,10000,100,0.01
+--trackgroup@xform_scale_x,xform_scale_y,xform_scale_z:Group::変形::スケール
+--separator:合成
+local xform_opacity = 100.0 --track@xform_opacity:変形::合成::不透明度,0,100,100,0.01
+--separator:対象
+local xform_target_local_space = true --checksection@xform_target_local_space:変形::対象::ローカル空間,true,false
+local xform_target_world_space = false --checksection@xform_target_world_space:変形::対象::ワールド空間,false,false
+--group:点滅,false
+local blink_duration = 0.0 --track@blink_duration:点滅::時間,0,10000,0,0.001,---
+--separator:不透明度
+local blink_opacity_steps = 2 --track@blink_opacity_steps:点滅::不透明度::段階,2,128,2,1
+local blink_opacity_min = 0.0 --track@blink_opacity_min:点滅::不透明度::最小,0,100,0,0.01
+local blink_opacity_max = 100.0 --track@blink_opacity_max:点滅::不透明度::最大,0,100,100,0.01
+--separator:スケール
+local blink_scale_steps = 2 --track@blink_scale_steps:点滅::スケール::段階,2,128,2,1
+local blink_scale_min = 100.0 --track@blink_scale_min:点滅::スケール::最小,-10000,10000,100,0.01
+local blink_scale_max = 100.0 --track@blink_scale_max:点滅::スケール::最大,-10000,10000,100,0.01
+--separator:エッジ検出
+local blink_edge_intensity = 100.0 --track@blink_edge_intensity:点滅::エッジ検出::強度,0,1000,100,0.01
+local blink_edge_threshold = -100.0 --track@blink_edge_threshold:点滅::エッジ検出::しきい値,-100,100,-100,0.01
+--separator:文字
+local blink_characters_pool = "" --string@blink_characters_pool:点滅::文字::候補,
+local blink_characters_font = "Noto Sans JP Black" --font@blink_characters_font:点滅::文字::フォント,Noto Sans JP Black
+local blink_characters_scale = 100.0 --track@blink_characters_scale:点滅::文字::スケール,0,1000,100,0.01
+--group:色調,false
+local tint_source = 0 --select@tint_source:色調::ソース,画像=0,レイヤー=1
+local tint_image = "" --file@tint_image:色調::画像,""
+local tint_layer = 0 --track@tint_layer:色調::レイヤー,-100,100,0,1,---
+--group:エフェクト,false
+local effect_params = "" --text@effect_params:エフェクト::パラメータ,
+--group:残像,false
+local echo_count = 0 --track@echo_count:残像::個数,0,100,0,1,---
+local echo_interval = 0.0 --track@echo_interval:残像::間隔,-100,100,-1,0.001
+local echo_decay = 50.0 --track@echo_decay:残像::減衰,0,100,50,0.01
+local echo_composite = 1 --select@echo_composite:残像::合成順=1,上=0,下=1
+--group:追加オプション,false
+local unit = 0 --select@unit:単位,フレーム=0,秒=1
+local layer_reference = 0 --select@layer_reference:レイヤー参照,絶対=0,相対=1
+local seed = 0 --track@seed:シード,-10000,10000,0,1
+local should_highlight = false --check@should_highlight:重なりを強調,false
+-- K互換のため末尾に追加（途中挿入すると旧aup2の位置ずれが起きる）
+local motion_word_mode = 1 --select@motion_word_mode:モーション::単語分割=1,空白のみ（従来）=0,強化（句読点・文字種）=1,文節（簡易）=2
+-- M4: AE Range Selector Shape / Ease High-Low 相当（末尾追加）
+local motion_selector_shape = 0 --select@motion_selector_shape:モーション::選択形状,正方形=0,ランプアップ=1,ランプダウン=2,三角=3
+local motion_selector_feather = 0.0 --track@motion_selector_feather:モーション::選択フェザー,0,100,0,0.01
 --[[pixelshader@tint:
 --#include <tint.hlsl>
 ]]
@@ -116,6 +121,15 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local lerp, clamp, copy_xform, stop = utils.lerp, utils.clamp, utils.copy_xform, utils.stop
+    -- to_color / to_style / to_number は utilities.lua の #include 展開で定義される
+
+    --#include "order.lua"
+    local order_utils = require("order")
+    local order_rank = order_utils.order_rank
+
+    --#include "words.lua"
+    local words_utils = require("words")
+    local word_groups = words_utils.word_groups
 
     local buffer
 
@@ -137,6 +151,7 @@ do
 
     motion_overlap = motion_overlap * 0.01
     motion_softness = motion_softness * 0.01
+    motion_selector_feather = motion_selector_feather * 0.01
 
     lyric_jitter = lyric_jitter * 0.01
     lyric_angle = rad(lyric_angle)
@@ -274,26 +289,73 @@ do
             return abs(range) > eps and (getvalue(0, TOTALTIME * t) - st) / range or t
         end
 
+        -- AE Selector Shape 相当: feather=0 なら従来どおり。feather で空間エンベロープを混ぜる。
+        local function apply_selector_shape(w, unit_i, n)
+            local shape = motion_selector_shape
+            local f = motion_selector_feather
+            if f <= eps then
+                return w
+            end
+
+            if shape == 0 then
+                local u = clamp(w, 0.0, 1.0)
+                local s = u * u * (3.0 - 2.0 * u)
+                return w * (1.0 - f) + s * f
+            end
+
+            if n <= 1 then
+                return w
+            end
+
+            local u = unit_i / (n - 1)
+            local env
+            if shape == 1 then
+                env = u
+            elseif shape == 2 then
+                env = 1.0 - u
+            else
+                env = 1.0 - abs(2.0 * u - 1.0)
+            end
+
+            local lo = -f * 0.5
+            local hi = 1.0 + f * 0.5
+            env = clamp((env - lo) / max(hi - lo, eps), 0.0, 1.0)
+            env = env * env * (3.0 - 2.0 * env)
+
+            return w * ((1.0 - f) + f * env)
+        end
+
+        -- progress(t, i, n, si, sn)
+        --   i, n  : 時刻用の順位と段数（中央から／外側からでは order_rank の結果）
+        --   si, sn: 選択形状に使う並びの位置と個数
         local progress
 
         if duration < 0.0 then
-            progress = function(t, i, n)
+            progress = function(t, i, n, si, sn)
                 t = t - TOTALTIME - duration
                 local d = duration * (motion_overlap + (1.0 - motion_overlap) / n) * max(motion_softness, eps)
 
                 if timing == 1 then
                     i = (get_time(i - n) - TOTALTIME - duration) * (d + duration) / duration
-                else
-                    i = -duration * i / n - min(d, 0.0)
+
+                    local p = t / duration + (t - i) / d
+                    local w = apply_selector_shape(1.0 - interpolate(p), si, sn)
+
+                    return (duration * i) / (duration + d) - t, -w
                 end
 
-                local p = t / duration + (t - i) / d
-                local w = 1.0 - interpolate(p)
+                -- FlowType_K v0.3.4 から移植: 自動の退場は登場を時間反転（t -> -duration - t）した形にする
+                -- 重み用の位相 i_phase と、局所時間用のずれ stagger を分ける
+                -- （同じ i を両方に使っていたため、退場が半分の時間で終わり、その後 t < 0 で消えていた）
+                local i_phase = duration * i / n - (d + duration)
+                local p = t / duration + (t - i_phase) / d
+                local w = apply_selector_shape(1.0 - interpolate(p), si, sn)
+                local stagger = (duration * duration * i / n) / (duration + d)
 
-                return (duration * i) / (duration + d) - t, -w
+                return -duration - t + stagger, -w
             end
         else
-            progress = function(t, i, n)
+            progress = function(t, i, n, si, sn)
                 local d = duration * (motion_overlap + (1.0 - motion_overlap) / n) * max(motion_softness, eps)
 
                 if timing == 1 then
@@ -303,7 +365,7 @@ do
                 end
 
                 local p = t / duration + (t - i) / d
-                local w = 1.0 - interpolate(p)
+                local w = apply_selector_shape(1.0 - interpolate(p), si, sn)
 
                 return t - (duration * i) / (duration + d), w
             end
@@ -370,6 +432,11 @@ do
             local hash4d = hash.hash4d
 
             if lyric_distance > eps then
+                -- FlowType_K v0.3.5 から移植: 伸縮・ピークの指数を ±6（64 倍）、最終倍率を ±256 に制限する
+                -- （極端な値でレンダーバッファが肥大し、GPU デバイス喪失で本体ごと落ちたため）
+                local lyric_scale_exp_max = 6.0
+                local lyric_scale_abs_max = 256.0
+
                 apply_lyric = function(i, n, t, w)
                     local hx, hy, _, _ = hash4d(i, n, seed)
 
@@ -395,18 +462,21 @@ do
                     local x, y = cos(angle), sin(angle)
                     obj.ox = obj.ox + r * x
                     obj.oy = obj.oy + r * y
-                    obj.sx = obj.sx * (2.0 ^ (s * abs(x)))
-                    obj.sy = obj.sy * (2.0 ^ (s * abs(y)))
+                    obj.sx = obj.sx * (2.0 ^ clamp(s * abs(x), -lyric_scale_exp_max, lyric_scale_exp_max))
+                    obj.sy = obj.sy * (2.0 ^ clamp(s * abs(y), -lyric_scale_exp_max, lyric_scale_exp_max))
 
                     if t < spf then
-                        local p = 2.0 ^ lyric_peak
+                        local p = 2.0 ^ clamp(lyric_peak, -lyric_scale_exp_max, lyric_scale_exp_max)
                         obj.sx = obj.sx * p
                         obj.sy = obj.sy * p
                     elseif lyric_should_overshoot and t < 2.0 * spf then
-                        local p = 2.0 ^ (-lyric_peak * 0.5)
+                        local p = 2.0 ^ clamp(-lyric_peak * 0.5, -lyric_scale_exp_max, lyric_scale_exp_max)
                         obj.sx = obj.sx * p
                         obj.sy = obj.sy * p
                     end
+
+                    obj.sx = clamp(obj.sx, -lyric_scale_abs_max, lyric_scale_abs_max)
+                    obj.sy = clamp(obj.sy, -lyric_scale_abs_max, lyric_scale_abs_max)
                 end
             end
 
@@ -417,7 +487,7 @@ do
 
                 local alignment, chars
 
-                if blink_characters_pool ~= "" then
+                if type(blink_characters_pool) == "string" and blink_characters_pool ~= "" then
                     if text ~= nil then
                         local styles = {
                             ["標準文字"] = 0,
@@ -452,21 +522,21 @@ do
 
                         obj.setfont(
                             blink_characters_font,
-                            obj.getvalue(LAYER, "テキスト", "サイズ") * blink_characters_scale * 0.01,
-                            styles[obj.getvalue(LAYER, "テキスト", "文字装飾")],
-                            obj.getvalue(LAYER, "テキスト", "文字色") --[[@as number]],
-                            obj.getvalue(LAYER, "テキスト", "影・縁色") --[[@as number]],
+                            to_number(obj.getvalue(LAYER, "テキスト", "サイズ"), 0) * (tonumber(blink_characters_scale) or 100) * 0.01,
+                            to_style(obj.getvalue(LAYER, "テキスト", "文字装飾"), styles),
+                            to_color(obj.getvalue(LAYER, "テキスト", "文字色"), 0xffffff),
+                            to_color(obj.getvalue(LAYER, "テキスト", "影・縁色"), 0x000000),
                             obj.getvalue(LAYER, "テキスト", "B") ~= "0",
                             obj.getvalue(LAYER, "テキスト", "I") ~= "0",
-                            obj.getvalue(LAYER, "テキスト", "字間") --[[@as number]],
-                            obj.getvalue(LAYER, "テキスト", "行間") --[[@as number]]
+                            to_number(obj.getvalue(LAYER, "テキスト", "字間"), 0),
+                            to_number(obj.getvalue(LAYER, "テキスト", "行間"), 0)
                         )
 
                         alignment = alignments[obj.getvalue(LAYER, "テキスト", "文字揃え")]
                     else
                         obj.setfont(
                             blink_characters_font,
-                            max(obj.w, obj.h) * blink_characters_scale * 0.01,
+                            max(obj.w, obj.h) * (tonumber(blink_characters_scale) or 100) * 0.01,
                             0,
                             0xffffff,
                             0x000000,
@@ -483,7 +553,7 @@ do
                 end
 
                 apply_blink = function(i, n, t)
-                    if blink_characters_pool ~= "" then
+                    if type(blink_characters_pool) == "string" and blink_characters_pool ~= "" then
                         local hx, _, _, _ = hash4d(i, n, seed + 1, t * FPS * 100.0, 1, #chars)
 
                         local xform = {}
@@ -685,22 +755,30 @@ do
                             id = -1
                             pattern = [=[[^\s\v\x85\pZ]]=]
                         elseif motion_based_on == 2 then
-                            j = 0
-                            id = -2
-                            pattern = [=[[\s\v\x85\pZ]]=]
+                            if motion_word_mode >= 1 then
+                                -- 強化（句読点・文字種）/ 文節（簡易）。Blink と共通の words.lua
+                                t = word_groups(utf8, content, motion_word_mode)
+                                pattern = nil
+                            else
+                                j = 0
+                                id = -2
+                                pattern = [=[[\s\v\x85\pZ]]=]
+                            end
                         else
                             j = 0
                             id = -3
                             pattern = "\\n"
                         end
 
-                        for _, m in ipairs({ regex.mark(id, content, pattern) }) do
-                            if m[1] then
-                                j = j + 1
-                            end
+                        if pattern ~= nil then
+                            for _, m in ipairs({ regex.mark(id, content, pattern) }) do
+                                if m[1] then
+                                    j = j + 1
+                                end
 
-                            if not m[2] then
-                                t[#t + 1] = max(j, 0)
+                                if not m[2] then
+                                    t[#t + 1] = max(j, 0)
+                                end
                             end
                         end
 
@@ -761,14 +839,19 @@ do
                 end
             end
 
+            -- 時刻（開始の順番・手動タイミングの区間・重なりを強調）に使う順位 ti と段数 tn
+            -- 中央から／外側からだけ i, n と分かれる。i, n は乱数・リリックの配置・選択形状に使い続ける
+            -- （順位で置き換えると、左右対称の 2 個が同じ乱数・同じ向きになるため）
+            local ti, tn = order_rank(i, n, motion_order)
+
             if timing == 1 then
                 local sections = getoption("section_num")
-                if sections < n then
-                    print("@warn", (n - sections) .. " more sections are required to map all units")
+                if sections < tn then
+                    print("@warn", (tn - sections) .. " more sections are required to map all units")
                 end
 
                 if duration < 0.0 then
-                    duration = get_time(-n - 1) - TOTALTIME
+                    duration = get_time(-tn - 1) - TOTALTIME
 
                     if -duration < eps then
                         return
@@ -777,12 +860,12 @@ do
                     local amount = abs(offset)
 
                     if amount >= eps then
-                        local base = -1 - i
+                        local base = -1 - ti
                         amount = get_time(base) - get_time(-amount + base)
                         offset = offset < 0.0 and -amount or amount
                     end
                 else
-                    duration = get_time(n)
+                    duration = get_time(tn)
 
                     if duration < eps then
                         return
@@ -791,14 +874,14 @@ do
                     local amount = abs(offset)
 
                     if amount >= eps then
-                        amount = get_time(amount + i) - get_time(i)
+                        amount = get_time(amount + ti) - get_time(ti)
                         offset = offset < 0.0 and -amount or amount
                     end
                 end
             end
 
             motion = function(dt, idx)
-                local t, w = progress(clamp(TIME + dt - offset, 0.0, TOTALTIME), i, n)
+                local t, w = progress(clamp(TIME + dt - offset, 0.0, TOTALTIME), ti, tn, i, n)
 
                 apply_xform(w)
 
@@ -830,13 +913,13 @@ do
                 end
 
                 if should_highlight and not getinfo("saving") then
-                    local x = 1.0 + (n - 1) * motion_overlap
+                    local x = 1.0 + (tn - 1) * motion_overlap
                     pixelshader("tint", "object", "object", {
                         1.0,
                         0.0,
                         0.0,
                         1.0,
-                        max(0.0, (x - i) / x),
+                        max(0.0, (x - ti) / x),
                     })
                 end
             end

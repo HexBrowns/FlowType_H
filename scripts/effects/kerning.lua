@@ -1,56 +1,56 @@
---@Kerning
+--@カーニング
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Kerning@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:カーニング@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
-local kerning_mode = 1 --select@kerning_mode:Kerning Mode=1,None=0,Metrics=1
---group:Filter,true
-local filter_regex_pattern = "" --string@filter_regex_pattern:Filter::Regex Pattern,
-local filter_capture_group = 0 --track@filter_capture_group:Filter::Capture Group,0,20,0,1
-local should_limit_fx = false --checksection@should_limit_fx:Filter::Limit Effects Below,false,false
---group:Transform,false
---separator:Pivot Point
-local xform_pivot_x = 0.0 --track@xform_pivot_x:Transform::Pivot::X,-100000,100000,0,0.01
-local xform_pivot_y = 0.0 --track@xform_pivot_y:Transform::Pivot::Y,-100000,100000,0,0.01
-local xform_pivot_z = 0.0 --track@xform_pivot_z:Transform::Pivot::Z,-100000,100000,0,0.01
---trackgroup@xform_pivot_x,xform_pivot_y,xform_pivot_z:Group::Transform::Pivot
---separator:Position
-local xform_position_x = 0.0 --track@xform_position_x:Transform::Position::X,-100000,100000,0,0.01
-local xform_position_y = 0.0 --track@xform_position_y:Transform::Position::Y,-100000,100000,0,0.01
-local xform_position_z = 0.0 --track@xform_position_z:Transform::Position::Z,-100000,100000,0,0.01
---trackgroup@xform_position_x,xform_position_y,xform_position_z:Group::Transform::Position
---separator:Rotation
-local xform_rotation_w = 0.0 --track@xform_rotation_w:Transform::Rotation::W,-3600,3600,0,0.01
-local xform_rotation_x = 0.0 --track@xform_rotation_x:Transform::Rotation::X,-3600,3600,0,0.01
-local xform_rotation_y = 0.0 --track@xform_rotation_y:Transform::Rotation::Y,-3600,3600,0,0.01
-local xform_rotation_z = 0.0 --track@xform_rotation_z:Transform::Rotation::Z,-3600,3600,0,0.01
---#define EULER XYZ Euler=5,XZY Euler=7,YXZ Euler=11,YZX Euler=15,ZXY Euler=19,ZYX Euler=21
---#define ROTATION_MODES Quaternion=0,Axis Angle=1,${EULER}
-local xform_rotation_mode = 21 --select@xform_rotation_mode:Transform::Rotation::Mode=21,${ROTATION_MODES}
---trackgroup@xform_rotation_x,xform_rotation_y,xform_rotation_z:Group::Transform::Rotation
---separator:Scale
-local xform_scale_x = 100.0 --track@xform_scale_x:Transform::Scale::X,-10000,10000,100,0.01
-local xform_scale_y = 100.0 --track@xform_scale_y:Transform::Scale::Y,-10000,10000,100,0.01
-local xform_scale_z = 100.0 --track@xform_scale_z:Transform::Scale::Z,-10000,10000,100,0.01
---trackgroup@xform_scale_x,xform_scale_y,xform_scale_z:Group::Transform::Scale
---separator:Compositing
---#define DARKEN Darken=7,Multiply=3,Linear Burn=10
---#define LIGHTEN Lighten=6,Screen=4,Linear Dodge (Add)=1
---#define CONTRAST Overlay=5,Linear Light=11
---#define COMPARATIVE Difference=12,Subtract=2
---#define HSL Color=9,Luminosity=8
---#define BLEND_MODES Normal=0,${DARKEN},${LIGHTEN},${CONTRAST},${COMPARATIVE},${HSL}
-local xform_blend_mode = 0 --select@xform_blend_mode:Transform::Compositing::Blend Mode,${BLEND_MODES}
-local xform_opacity = 100.0 --track@xform_opacity:Transform::Compositing::Opacity,0,100,100,0.01
---separator:Target
-local xform_target_local_space = true --checksection@xform_target_local_space:Transform::Target::Local Space,true,false
-local xform_target_world_space = false --checksection@xform_target_world_space:Transform::Target::World Space,false,false
---group:Tint,false
-local tint_color = nil --color@tint_color:Tint::Color,nil
-local tint_opacity = 100.0 --track@tint_opacity:Tint::Opacity,0,100,100,0.01
---group:Additional Options,false
-local influence = 100.0 --track@influence:Influence,0,100,100,0.01
+local kerning_mode = 1 --select@kerning_mode:カーニング方式=1,なし=0,メトリクス=1
+--group:フィルタ,true
+local filter_regex_pattern = "" --string@filter_regex_pattern:フィルタ::正規表現,
+local filter_capture_group = 0 --track@filter_capture_group:フィルタ::キャプチャグループ,0,20,0,1
+local should_limit_fx = false --checksection@should_limit_fx:フィルタ::下位エフェクトを制限,false,false
+--group:変形,false
+--separator:ピボット
+local xform_pivot_x = 0.0 --track@xform_pivot_x:変形::ピボット::X,-100000,100000,0,0.01
+local xform_pivot_y = 0.0 --track@xform_pivot_y:変形::ピボット::Y,-100000,100000,0,0.01
+local xform_pivot_z = 0.0 --track@xform_pivot_z:変形::ピボット::Z,-100000,100000,0,0.01
+--trackgroup@xform_pivot_x,xform_pivot_y,xform_pivot_z:Group::変形::ピボット
+--separator:位置
+local xform_position_x = 0.0 --track@xform_position_x:変形::位置::X,-100000,100000,0,0.01
+local xform_position_y = 0.0 --track@xform_position_y:変形::位置::Y,-100000,100000,0,0.01
+local xform_position_z = 0.0 --track@xform_position_z:変形::位置::Z,-100000,100000,0,0.01
+--trackgroup@xform_position_x,xform_position_y,xform_position_z:Group::変形::位置
+--separator:回転
+local xform_rotation_w = 0.0 --track@xform_rotation_w:変形::回転::W,-3600,3600,0,0.01
+local xform_rotation_x = 0.0 --track@xform_rotation_x:変形::回転::X,-3600,3600,0,0.01
+local xform_rotation_y = 0.0 --track@xform_rotation_y:変形::回転::Y,-3600,3600,0,0.01
+local xform_rotation_z = 0.0 --track@xform_rotation_z:変形::回転::Z,-3600,3600,0,0.01
+--#define EULER XYZオイラー=5,XZYオイラー=7,YXZオイラー=11,YZXオイラー=15,ZXYオイラー=19,ZYXオイラー=21
+--#define ROTATION_MODES クォータニオン=0,軸角=1,${EULER}
+local xform_rotation_mode = 21 --select@xform_rotation_mode:変形::回転::モード=21,${ROTATION_MODES}
+--trackgroup@xform_rotation_x,xform_rotation_y,xform_rotation_z:Group::変形::回転
+--separator:スケール
+local xform_scale_x = 100.0 --track@xform_scale_x:変形::スケール::X,-10000,10000,100,0.01
+local xform_scale_y = 100.0 --track@xform_scale_y:変形::スケール::Y,-10000,10000,100,0.01
+local xform_scale_z = 100.0 --track@xform_scale_z:変形::スケール::Z,-10000,10000,100,0.01
+--trackgroup@xform_scale_x,xform_scale_y,xform_scale_z:Group::変形::スケール
+--separator:合成
+--#define DARKEN 比較（暗）=7,乗算=3,焼き込みリニア=10
+--#define LIGHTEN 比較（明）=6,スクリーン=4,覆い焼きリニア（加算）=1
+--#define CONTRAST オーバーレイ=5,リニアライト=11
+--#define COMPARATIVE 差の絶対値=12,減算=2
+--#define HSL カラー=9,輝度=8
+--#define BLEND_MODES 通常=0,${DARKEN},${LIGHTEN},${CONTRAST},${COMPARATIVE},${HSL}
+local xform_blend_mode = 0 --select@xform_blend_mode:変形::合成::ブレンドモード,${BLEND_MODES}
+local xform_opacity = 100.0 --track@xform_opacity:変形::合成::不透明度,0,100,100,0.01
+--separator:対象
+local xform_target_local_space = true --checksection@xform_target_local_space:変形::対象::ローカル空間,true,false
+local xform_target_world_space = false --checksection@xform_target_world_space:変形::対象::ワールド空間,false,false
+--group:色調,false
+local tint_color = nil --color@tint_color:色調::色,nil
+local tint_opacity = 100.0 --track@tint_opacity:色調::不透明度,0,100,100,0.01
+--group:追加オプション,false
+local influence = 100.0 --track@influence:影響度,0,100,100,0.01
 
 if obj.num < 2 then
     print("@error", "Enable Multi Object to use this script")
@@ -264,7 +264,7 @@ do
         if tint_color ~= nil then
             local r, g, b = RGB(tint_color)
             obj.pixelshader(
-                "tint@Motion@${SCRIPT_NAME}",
+                "tint@モーション@${SCRIPT_NAME}",
                 "object",
                 "object",
                 { r / 255.0, g / 255.0, b / 255.0, 1.0, tint_opacity * influence }

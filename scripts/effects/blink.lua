@@ -1,36 +1,38 @@
---@Blink
+--@点滅
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Blink@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:点滅@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
---#define BASED_ON Whole=-2,Objects=-1,Characters=0,Characters Excluding Spaces=1,Words=2,Lines=3
-local based_on = 0 --select@based_on:Based On,${BASED_ON}
-local duration = 0.0 --track@duration:Duration,-10000,10000,8,0.001,---
---group:Opacity,true
-local opacity_steps = 2 --track@opacity_steps:Opacity::Steps,2,128,2,1
-local opacity_min = 0.0 --track@opacity_min:Opacity::Minimum,0,100,0,0.01
-local opacity_max = 100.0 --track@opacity_max:Opacity::Maximum,0,100,100,0.01
---group:Scale,false
-local scale_steps = 2 --track@scale_steps:Scale::Steps,2,128,2,1
-local scale_min = 100.0 --track@scale_min:Scale::Minimum,-10000,10000,100,0.01
-local scale_max = 100.0 --track@scale_max:Scale::Maximum,-10000,10000,100,0.01
---group:Edge Detection,false
-local edge_intensity = 100.0 --track@edge_intensity:Edge Detection::Intensity,0,1000,100,0.01
-local edge_threshold = -100.0 --track@edge_threshold:Edge Detection::Threshold,-100,100,-100,0.01
---group:Characters,false
-local characters_pool = "" --string@characters_pool:Characters::Pool,
-local characters_font = "Noto Sans JP Black" --font@characters_font:Characters::Font,Noto Sans JP Black
-local characters_scale = 100.0 --track@characters_scale:Characters::Scale,0,1000,100,0.01
---group:Color,false
-local color_steps = 2 --track@color_steps:Color::Steps,2,128,2,1
-local color_source = 0 --select@color_source:Color::Source,Image=0,Layer=1
-local color_image = "" --file@color_image:Color::Image,""
-local color_layer = 0 --track@color_layer:Color::Layer,-100,100,0,1,---
---group:Additional Options,false
-local unit = 0 --select@unit:Unit,Frames=0,Seconds=1
-local layer_reference = 0 --select@layer_reference:Layer Reference,Absolute=0,Relative=1
-local seed = 0 --track@seed:Seed,-10000,10000,0,1
+--#define BASED_ON 全体=-2,オブジェクト=-1,文字=0,文字（空白除く）=1,単語=2,行=3
+local based_on = 0 --select@based_on:基準,${BASED_ON}
+local duration = 0.0 --track@duration:時間,-10000,10000,8,0.001,---
+--group:不透明度,true
+local opacity_steps = 2 --track@opacity_steps:不透明度::段階,2,128,2,1
+local opacity_min = 0.0 --track@opacity_min:不透明度::最小,0,100,0,0.01
+local opacity_max = 100.0 --track@opacity_max:不透明度::最大,0,100,100,0.01
+--group:スケール,false
+local scale_steps = 2 --track@scale_steps:スケール::段階,2,128,2,1
+local scale_min = 100.0 --track@scale_min:スケール::最小,-10000,10000,100,0.01
+local scale_max = 100.0 --track@scale_max:スケール::最大,-10000,10000,100,0.01
+--group:エッジ検出,false
+local edge_intensity = 100.0 --track@edge_intensity:エッジ検出::強度,0,1000,100,0.01
+local edge_threshold = -100.0 --track@edge_threshold:エッジ検出::しきい値,-100,100,-100,0.01
+--group:文字,false
+local characters_pool = "" --string@characters_pool:文字::候補,
+local characters_font = "Noto Sans JP Black" --font@characters_font:文字::フォント,Noto Sans JP Black
+local characters_scale = 100.0 --track@characters_scale:文字::スケール,0,1000,100,0.01
+--group:色,false
+local color_steps = 2 --track@color_steps:色::段階,2,128,2,1
+local color_source = 0 --select@color_source:色::ソース,画像=0,レイヤー=1
+local color_image = "" --file@color_image:色::画像,""
+local color_layer = 0 --track@color_layer:色::レイヤー,-100,100,0,1,---
+--group:追加オプション,false
+local unit = 0 --select@unit:単位,フレーム=0,秒=1
+local layer_reference = 0 --select@layer_reference:レイヤー参照,絶対=0,相対=1
+local seed = 0 --track@seed:シード,-10000,10000,0,1
+-- K互換のため末尾に追加（途中挿入すると旧aup2の位置ずれが起きる）
+local word_mode = 1 --select@word_mode:単語分割=1,空白のみ（従来）=0,強化（句読点・文字種）=1,文節（簡易）=2
 
 if obj.framerate == 0 then
     print("@error", "Framerate value must be greater than zero")
@@ -41,6 +43,11 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local lerp, copy_xform, stop = utils.lerp, utils.copy_xform, utils.stop
+    -- to_color / to_style / to_number は utilities.lua の #include 展開で定義される
+
+    --#include "words.lua"
+    local words_utils = require("words")
+    local word_groups = words_utils.word_groups
 
     local buffer
 
@@ -150,22 +157,31 @@ do
                     id = -1
                     pattern = [=[[^\s\v\x85\pZ]]=]
                 elseif based_on == 2 then
-                    j = 0
-                    id = -2
-                    pattern = [=[[\s\v\x85\pZ]]=]
+                    if word_mode >= 1 then
+                        -- 強化（句読点・文字種）/ 文節（簡易）。Motion と共通の words.lua
+                        -- v0.1.0 は存在しない utf8.codes を呼んでいて、この経路は nil 呼び出しで止まっていた
+                        t = word_groups(utf8, content, word_mode)
+                        pattern = nil
+                    else
+                        j = 0
+                        id = -2
+                        pattern = [=[[\s\v\x85\pZ]]=]
+                    end
                 else
                     j = 0
                     id = -3
                     pattern = "\\n"
                 end
 
-                for _, m in ipairs({ regex.mark(id, content, pattern) }) do
-                    if m[1] then
-                        j = j + 1
-                    end
+                if pattern ~= nil then
+                    for _, m in ipairs({ regex.mark(id, content, pattern) }) do
+                        if m[1] then
+                            j = j + 1
+                        end
 
-                    if not m[2] then
-                        t[#t + 1] = max(j, 0)
+                        if not m[2] then
+                            t[#t + 1] = max(j, 0)
+                        end
                     end
                 end
 
@@ -191,7 +207,7 @@ do
     end
 
     if (TIME - (duration < 0.0 and obj.totaltime or 0.0)) / duration < 1.0 then
-        if characters_pool ~= "" then
+        if type(characters_pool) == "string" and characters_pool ~= "" then
             local alignment
 
             if text ~= nil then
@@ -228,14 +244,14 @@ do
 
                 obj.setfont(
                     characters_font,
-                    obj.getvalue(LAYER, "テキスト", "サイズ") * characters_scale * 0.01,
-                    styles[obj.getvalue(LAYER, "テキスト", "文字装飾")],
-                    obj.getvalue(LAYER, "テキスト", "文字色") --[[@as number]],
-                    obj.getvalue(LAYER, "テキスト", "影・縁色") --[[@as number]],
+                    to_number(obj.getvalue(LAYER, "テキスト", "サイズ"), 0) * (tonumber(characters_scale) or 100) * 0.01,
+                    to_style(obj.getvalue(LAYER, "テキスト", "文字装飾"), styles),
+                    to_color(obj.getvalue(LAYER, "テキスト", "文字色"), 0xffffff),
+                    to_color(obj.getvalue(LAYER, "テキスト", "影・縁色"), 0x000000),
                     obj.getvalue(LAYER, "テキスト", "B") ~= "0",
                     obj.getvalue(LAYER, "テキスト", "I") ~= "0",
-                    obj.getvalue(LAYER, "テキスト", "字間") --[[@as number]],
-                    obj.getvalue(LAYER, "テキスト", "行間") --[[@as number]]
+                    to_number(obj.getvalue(LAYER, "テキスト", "字間"), 0),
+                    to_number(obj.getvalue(LAYER, "テキスト", "行間"), 0)
                 )
 
                 alignment = alignments[obj.getvalue(LAYER, "テキスト", "文字揃え")]
@@ -299,7 +315,7 @@ do
                     1
                 )
 
-                pixelshader("alpha_mask@Motion@${SCRIPT_NAME}", "cache:tmp", "object", { 0.0 }, "mask")
+                pixelshader("alpha_mask@モーション@${SCRIPT_NAME}", "cache:tmp", "object", { 0.0 }, "mask")
 
                 if not copybuffer("object", "cache:tmp") then
                     error("Failed to copy buffer")
@@ -342,7 +358,7 @@ do
                 end
 
                 pixelshader(
-                    "map@Motion@${SCRIPT_NAME}",
+                    "map@モーション@${SCRIPT_NAME}",
                     "cache:tmp",
                     { "cache:tmp", "object" },
                     { r, 0.5 },

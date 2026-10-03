@@ -1,7 +1,0 @@
-EXPORTS
-    InitializeLogger
-    InitializeConfig
-    RequiredVersion
-    InitializePlugin
-    GetCommonPluginTable
-    RegisterPlugin

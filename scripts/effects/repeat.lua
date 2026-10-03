@@ -1,34 +1,39 @@
---@Repeat
+--@リピート
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Repeat@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:リピート@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
---group:Layout,true
---separator:Count
-local layout_count_x = 1 --track@layout_count_x:Layout::Count::X,1,100,1,1
-local layout_count_y = 1 --track@layout_count_y:Layout::Count::Y,1,100,1,1
---trackgroup@layout_count_x,layout_count_y:Group::Layout::Count
---separator:Padding
-local layout_padding_x = 0.0 --track@layout_padding_x:Layout::Padding::X,-10000,10000,0,0.01
-local layout_padding_y = 0.0 --track@layout_padding_y:Layout::Padding::Y,-10000,10000,0,0.01
---trackgroup@layout_padding_x,layout_padding_y:Group::Layout::Padding
---group:Position Offset,false
-local position_offset_angle = 0.0 --track@position_offset_angle:Position Offset::Angle,-89,89,0,0.01
-local position_offset_axis = 0.0 --track@position_offset_axis:Position Offset::Axis,-3600,3600,0,0.01
---group:Time Offset,false
-local time_offset_interval = 0.0 --track@time_offset_interval:Time Offset::Interval,-100,100,0,0.001
-local time_offset_orientation = 0 --select@time_offset_orientation:Time Offset::Orientation,Column=0,Row=1
-local time_offset_order = 0 --select@time_offset_order:Time Offset::Order,Forward=0,Reverse=1,Random=2
---group:Additional Options,false
-local unit = 0 --select@unit:Unit,Frames=0,Seconds=1
-local seed = 0 --track@seed:Seed,-10000,10000,0,1
-local should_highlight_order = false --check@should_highlight_order:Highlight Order,false
+--group:レイアウト,true
+--separator:個数
+local layout_count_x = 1 --track@layout_count_x:レイアウト::個数::X,1,100,1,1
+local layout_count_y = 1 --track@layout_count_y:レイアウト::個数::Y,1,100,1,1
+--trackgroup@layout_count_x,layout_count_y:Group::レイアウト::個数
+--separator:余白
+local layout_padding_x = 0.0 --track@layout_padding_x:レイアウト::余白::X,-10000,10000,0,0.01
+local layout_padding_y = 0.0 --track@layout_padding_y:レイアウト::余白::Y,-10000,10000,0,0.01
+--trackgroup@layout_padding_x,layout_padding_y:Group::レイアウト::余白
+--group:位置オフセット,false
+local position_offset_angle = 0.0 --track@position_offset_angle:位置オフセット::角度,-89,89,0,0.01
+local position_offset_axis = 0.0 --track@position_offset_axis:位置オフセット::軸,-3600,3600,0,0.01
+--group:時間オフセット,false
+local time_offset_interval = 0.0 --track@time_offset_interval:時間オフセット::間隔,-100,100,0,0.001
+local time_offset_orientation = 0 --select@time_offset_orientation:時間オフセット::向き,列=0,行=1
+local time_offset_order = 0 --select@time_offset_order:時間オフセット::順序,順方向=0,逆方向=1,ランダム=2,中央から=3,外側から=4
+--group:追加オプション,false
+local unit = 0 --select@unit:単位,フレーム=0,秒=1
+local seed = 0 --track@seed:シード,-10000,10000,0,1
+local should_highlight_order = false --check@should_highlight_order:順序を強調,false
 
 do
     --#include "utilities.lua"
     local utils = require("utilities")
     local clamp, copy_xform, stop = utils.clamp, utils.copy_xform, utils.stop
+    -- to_style / to_number は utilities.lua の #include 展開で定義される
+
+    --#include "order.lua"
+    local order_utils = require("order")
+    local order_rank = order_utils.order_rank
 
     local buffer
 
@@ -86,14 +91,14 @@ do
 
                 obj.setfont(
                     getvalue(LAYER, "テキスト", "フォント") --[[@as string]],
-                    getvalue(LAYER, "テキスト", "サイズ") --[[@as number]],
-                    styles[getvalue(LAYER, "テキスト", "文字装飾")],
+                    to_number(getvalue(LAYER, "テキスト", "サイズ"), 0),
+                    to_style(getvalue(LAYER, "テキスト", "文字装飾"), styles),
                     0,
                     0,
                     getvalue(LAYER, "テキスト", "B") ~= "0",
                     getvalue(LAYER, "テキスト", "I") ~= "0",
-                    getvalue(LAYER, "テキスト", "字間") --[[@as number]],
-                    getvalue(LAYER, "テキスト", "行間") --[[@as number]]
+                    to_number(getvalue(LAYER, "テキスト", "字間"), 0),
+                    to_number(getvalue(LAYER, "テキスト", "行間"), 0)
                 )
 
                 size = { obj.load("text.layout", text:gsub("\\\\", "\\"):gsub("\\n", "\n")) }
@@ -149,6 +154,23 @@ do
             local j = random(1, i)
             order[i], order[j] = order[j], order[i]
         end
+    elseif time_offset_order >= 3 then
+        -- 中央から／外側から: 向き（列／行）で決まる並びの中で、順位の小さい順に並べる
+        -- （同じ順位は並びの番号順）。格子の 2 次元の中心ではなく、並びの中央を基準にする
+        order = {}
+
+        for i = 1, count do
+            order[i] = i - 1
+        end
+
+        table.sort(order, function(a, b)
+            local ra = order_rank(a, count, time_offset_order)
+            local rb = order_rank(b, count, time_offset_order)
+            if ra ~= rb then
+                return ra < rb
+            end
+            return a < b
+        end)
     end
 
     local i = -1
@@ -160,9 +182,15 @@ do
             j = i
         elseif time_offset_order == 1 then
             j = count - i - 1
-        elseif time_offset_order == 2 then
+        elseif time_offset_order >= 2 then
             ---@cast order integer[]
             j = order[i + 1]
+        end
+
+        -- 時間オフセットと「順序を強調」に使う順位 k と段数 m（中央から／外側から以外は i, count）
+        local k, m = i, count
+        if time_offset_order >= 3 then
+            k, m = order_rank(j, count, time_offset_order)
         end
 
         if not copybuffer("object", CACHE_IMAGE) then
@@ -186,13 +214,13 @@ do
 
         if should_highlight_order and not getinfo("saving") then
             pixelshader(
-                "tint@Motion@${SCRIPT_NAME}",
+                "tint@モーション@${SCRIPT_NAME}",
                 "object",
                 "object",
-                { 1.0, 0.0, 0.0, 1.0, 1.0 - i / max(count - 1, 1) }
+                { 1.0, 0.0, 0.0, 1.0, 1.0 - k / max(m - 1, 1) }
             )
         end
 
-        return clamp(TIME + time_offset_interval * i, 0.0, TOTALTIME) - TIME
+        return clamp(TIME + time_offset_interval * k, 0.0, TOTALTIME) - TIME
     end)
 end

@@ -1,37 +1,37 @@
---@Island
+--@パーツ分解
 
 --require:${PROJECT_REQUIRES_AVIUTL2}
---information:Island@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--information:パーツ分解@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
-local threshold = 0.0 --track@threshold:Threshold,0,100,0,0.01
-local index = -1 --track@index:Index,-1,100,-1,1
---group:Anchor,true
-local anchor_target = 0 --select@anchor_target:Anchor::Target=1,Pivot Point=0,Position=1
-local anchor_should_overwrite = false --checksection@anchor_should_overwrite:Anchor::Overwrite,false,false
---group:Sort,false
---separator:Order
-local sort_order_primary_axis = 1 --select@sort_order_primary_axis:Sort::Order::Primary Axis=1,X=0,Y=1
-local sort_order_x = 0 --select@sort_order_x:Sort::Order::X,Left to Right=0,Right to Left=1
-local sort_order_y = 0 --select@sort_order_y:Sort::Order::Y,Top to Bottom=0,Bottom to Top=1
-local sort_order_custom_order = {} --value@sort_order_custom_order:Sort::Order::Custom Order,{}
---separator:Blocks
-local sort_blocks_x = 0 --track@sort_blocks_x:Sort::Blocks::X,0,50,0,1,---
-local sort_blocks_y = 0 --track@sort_blocks_y:Sort::Blocks::Y,0,50,0,1,---
---group:Tint,false
-local tint_source = 0 --select@tint_source:Tint::Source,Image=0,Layer=1
-local tint_image = "" --file@tint_image:Tint::Image,""
-local tint_layer = 0 --track@tint_layer:Tint::Layer,-100,100,0,1,---
-local tint_order = 0 --select@tint_order:Tint::Order,Forward=0,Reverse=1,Random=2
---group:Time Offset,false
-local time_offset_interval = 0.0 --track@time_offset_interval:Time Offset::Interval,-100,100,0,0.001
-local time_offset_order = 0 --select@time_offset_order:Time Offset::Order,Forward=0,Reverse=1,Random=2
---group:Additional Options,false
-local connectivity = 1 --select@connectivity:Connectivity=1,4-Connected=0,8-Connected=1
-local unit = 0 --select@unit:Unit,Frames=0,Seconds=1
-local layer_reference = 0 --select@layer_reference:Layer Reference,Absolute=0,Relative=1
-local seed = 0 --track@seed:Seed,-10000,10000,0,1
-local should_highlight_order = false --check@should_highlight_order:Highlight Order,false
+local threshold = 0.0 --track@threshold:しきい値,0,100,0,0.01
+local index = -1 --track@index:インデックス,-1,100,-1,1
+--group:アンカー,true
+local anchor_target = 0 --select@anchor_target:アンカー::対象=1,ピボット=0,位置=1
+local anchor_should_overwrite = false --checksection@anchor_should_overwrite:アンカー::上書き,false,false
+--group:並べ替え,false
+--separator:順序
+local sort_order_primary_axis = 1 --select@sort_order_primary_axis:並べ替え::順序::主軸=1,X=0,Y=1
+local sort_order_x = 0 --select@sort_order_x:並べ替え::順序::X,左→右=0,右→左=1
+local sort_order_y = 0 --select@sort_order_y:並べ替え::順序::Y,上→下=0,下→上=1
+local sort_order_custom_order = {} --value@sort_order_custom_order:並べ替え::順序::カスタム,{}
+--separator:ブロック
+local sort_blocks_x = 0 --track@sort_blocks_x:並べ替え::ブロック::X,0,50,0,1,---
+local sort_blocks_y = 0 --track@sort_blocks_y:並べ替え::ブロック::Y,0,50,0,1,---
+--group:色調,false
+local tint_source = 0 --select@tint_source:色調::ソース,画像=0,レイヤー=1
+local tint_image = "" --file@tint_image:色調::画像,""
+local tint_layer = 0 --track@tint_layer:色調::レイヤー,-100,100,0,1,---
+local tint_order = 0 --select@tint_order:色調::順序,順方向=0,逆方向=1,ランダム=2,中央から=3,外側から=4
+--group:時間オフセット,false
+local time_offset_interval = 0.0 --track@time_offset_interval:時間オフセット::間隔,-100,100,0,0.001
+local time_offset_order = 0 --select@time_offset_order:時間オフセット::順序,順方向=0,逆方向=1,ランダム=2,中央から=3,外側から=4
+--group:追加オプション,false
+local connectivity = 1 --select@connectivity:連結=1,4連結=0,8連結=1
+local unit = 0 --select@unit:単位,フレーム=0,秒=1
+local layer_reference = 0 --select@layer_reference:レイヤー参照,絶対=0,相対=1
+local seed = 0 --track@seed:シード,-10000,10000,0,1
+local should_highlight_order = false --check@should_highlight_order:順序を強調,false
 --[[pixelshader@color_mask:
 --#include <color_mask.hlsl>
 ]]
@@ -45,6 +45,10 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local clamp, copy_xform, stop = utils.clamp, utils.copy_xform, utils.stop
+
+    --#include "order.lua"
+    local order_utils = require("order")
+    local order_rank = order_utils.order_rank
 
     local island = obj.module("Island@${PROJECT_NAME}")
     local scan, fetch = island.scan, island.fetch
@@ -157,11 +161,15 @@ do
                 t = i / max(n - 1, 1)
             elseif tint_order == 1 then
                 t = 1.0 - i / max(n - 1, 1)
+            elseif tint_order >= 3 then
+                -- 中央から／外側から: 順位 0 が色の始点、最後の段が終点
+                local r, m = order_rank(i, n, tint_order)
+                t = r / max(m - 1, 1)
             else
                 t = rand1(-seed, i)
             end
 
-            pixelshader("map@Motion@${SCRIPT_NAME}", "object", { "object", CACHE_LUT }, { t, 0.5 }, "copy", "clamp")
+            pixelshader("map@モーション@${SCRIPT_NAME}", "object", { "object", CACHE_LUT }, { t, 0.5 }, "copy", "clamp")
         end
     end
 
@@ -240,6 +248,13 @@ do
     if should_use_custom_order then
         n = math.min(n, #sort_order_custom_order + 1)
         clearbuffer(CACHE_ALPHA_MASK, W, H)
+        -- 最後の 1 個（残り全部）は、登録した島をこのマスクで抜いて描く。逆方向・ランダム・
+        -- 中央から・外側からでは残りが登録した島より先に描かれることがあるので、
+        -- 並べる前に登録した島を全部マスクへ描いておく（v0.2.0 までは描く順に足していた）
+        for c = 1, n - 1 do
+            pixelshader("color_mask", CACHE_ALPHA_MASK, { CACHE_IMAGE, CACHE_COLOR_MASK },
+                { 0, 0, sort_order_custom_order[c] }, "draw")
+        end
     end
 
     local order
@@ -256,6 +271,23 @@ do
             local j = random(1, i)
             order[i], order[j] = order[j], order[i]
         end
+    elseif time_offset_order >= 3 then
+        -- 中央から／外側から: 順位の小さい順に並べる（同じ順位は並べ替え後の番号順）
+        -- 個別オブジェクトの番号の付け方は、ほかの順序と同じく時間の順になる
+        order = {}
+
+        for i = 1, n do
+            order[i] = i - 1
+        end
+
+        table.sort(order, function(a, b)
+            local ra = order_rank(a, n, time_offset_order)
+            local rb = order_rank(b, n, time_offset_order)
+            if ra ~= rb then
+                return ra < rb
+            end
+            return a < b
+        end)
     end
 
     local i = -1
@@ -267,18 +299,28 @@ do
             j = i
         elseif time_offset_order == 1 then
             j = n - i - 1
-        elseif time_offset_order == 2 then
+        elseif time_offset_order >= 2 then
             ---@cast order integer[]
             j = order[i + 1]
         end
 
+        -- 時間オフセットと「順序を強調」に使う順位 k と段数 m（中央から／外側から以外は i, n）
+        local k, m = i, n
+        if time_offset_order >= 3 then
+            k, m = order_rank(j, n, time_offset_order)
+        end
+
+        -- カスタム順序の最後の 1 個は「残り全部」。順方向以外は呼び出し順 i と並びの番号 j が
+        -- 一致しないので、j で判定する（v0.2.0 までは逆方向・ランダムで i を使い、
+        -- 表の外を読んで fetch に nil を渡していた）
+        local is_listed = j < n - 1
+
         if should_use_custom_order then
-            if i < n - 1 then
+            if is_listed then
                 j = sort_order_custom_order[j + 1]
                 local x, y, w, h, dx, dy = fetch(ID, j)
                 clearbuffer("object", w, h)
                 pixelshader("color_mask", "object", { CACHE_IMAGE, CACHE_COLOR_MASK }, { x, y, j })
-                pixelshader("color_mask", CACHE_ALPHA_MASK, { CACHE_IMAGE, CACHE_COLOR_MASK }, { 0, 0, j }, "draw")
                 copy_xform(obj, xform)
                 set_anchor(dx, dy)
             else
@@ -286,7 +328,7 @@ do
                     stop("Failed to copy buffer")
                     return
                 end
-                pixelshader("alpha_mask@Motion@${SCRIPT_NAME}", "object", CACHE_ALPHA_MASK, { 1.0 }, "mask")
+                pixelshader("alpha_mask@モーション@${SCRIPT_NAME}", "object", CACHE_ALPHA_MASK, { 1.0 }, "mask")
                 copy_xform(obj, xform)
             end
         else
@@ -303,13 +345,13 @@ do
 
         if should_highlight_order and not getinfo("saving") then
             pixelshader(
-                "tint@Motion@${SCRIPT_NAME}",
+                "tint@モーション@${SCRIPT_NAME}",
                 "object",
                 "object",
-                { 1.0, 0.0, 0.0, 1.0, 1.0 - i / max(n - 1, 1) }
+                { 1.0, 0.0, 0.0, 1.0, 1.0 - k / max(m - 1, 1) }
             )
         end
 
-        return clamp(TIME + time_offset_interval * i, 0.0, TOTALTIME) - TIME
+        return clamp(TIME + time_offset_interval * k, 0.0, TOTALTIME) - TIME
     end)
 end

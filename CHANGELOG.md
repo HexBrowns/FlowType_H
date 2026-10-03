@@ -1,5 +1,66 @@
 # Changelog
 
+## v0.3.0 (FlowType_H local)
+
+> [!CAUTION]
+> スクリプトの効果名を日本語にした．**保存キーが変わるので，v0.2.1 までで保存したプロジェクトの FlowType_H の効果は読み込めなくなる．**
+
+- 効果名: `Motion` → `モーション`，`Island` → `パーツ分解`，`Kerning` → `カーニング`，`Repeat` → `リピート`，`Blink` → `点滅`，`Echo` → `残像`（`*@FlowType_H`）
+  - プラグインのフィルタも `Trim` → `トリミング`，`Deform` → `変形`，`Align` → `整列`，`Transform` → `トランスフォーム` にした（設定項目の名前・範囲・初期値は同じ）
+  - スクリプトモジュール名（`UTF8@FlowType_H` `Island@FlowType_H` など）は変えていない
+  - 同梱プリセットも `モーション@FlowType_H.Factory.Lyric` / `Stretch` に改名した
+- プラグイン（`FlowType_H.aux2`）を C++ から Rust（aviutl2-rs 0.48）に書き直した（`src/`。`build.ps1` でビルドする）
+  - フィルタ 4 つ・スクリプトモジュール 7 つ・メニュー 14 個を移植した．計算は原作と同じ式（回転は Eigen 5.0.1 の実装を写した，乱数 `hash4d` の整数化は MSVC と同じ）
+  - 文字の組みは HarfBuzz（harfbuzz-sys 同梱の 8.4.0．原作は vcpkg の 14.2.1）．正規表現は RE2 の代わりに regex クレート
+  - 原作は行ごとの処理を並列にしていたが，スレッドを起こさないようにした（プラグインが外れた後にスレッドが残ると終了時に落ちるため）
+  - フィルタのラベルを `HexScript` にした（原作は `テキスト`）
+  - 読むだけのメニュー（参照式・プロパティ名・エフェクトのコピー）は `call_read_section` で読む（本体の Undo に触れない）
+  - 「エフェクトをコピー」で対象の効果が見つからないときに止まらなくなる不具合を直した（原作は無限に回っていた）
+- テキストのサイズ・字間・行間を `tonumber(obj.getvalue(...))` と直接渡していたのを，`to_number(obj.getvalue(...), 既定値)` で受けるようにした（`obj.getvalue` は対象が無いと戻り値なしを返し，引数なしの `tonumber` で止まる）．`点滅` / `モーション` の点滅の文字 / `リピート`
+- 必要な本体の版を 2.1.11 にした（スクリプトの `--require:2011100`。Rust 版プラグインが使う aviutl2-rs 0.48 に合わせた）
+- 文書を公開先（[HexBrowns/FlowType_H](https://github.com/HexBrowns/FlowType_H)）と Rust 版に合わせた: README（原作との違い・導入方法・ビルド），`THIRD_PARTY_LICENSES.md`（Rust 版が含む SDK・Eigen・HarfBuzz・PCG3D だけにした），依存クレートのライセンス一覧 `THIRD_PARTY_CRATES.md` を追加
+
+## v0.2.1 (FlowType_H local)
+
+- `Island@FlowType_H` で `並べ替え::順序::カスタム` を使うときの不具合を修正（FlowType_K 由来）
+  - `時間オフセット::順序` が 逆方向／ランダム だと，登録した島の代わりに表の外（nil）を取り出していた
+  - 最後の 1 個（登録していない残り全部）は登録した島をマスクで抜いて描くが，そのマスクを描く順に足していたので，残りが登録した島より先に来る順序（逆方向・ランダム・v0.2.0 で足した 外側から など）では登録した島が残りの側にも写っていた．並べる前にマスクを作るようにした
+  - 順方向の見た目は変わらない
+
+## v0.2.0 (FlowType_H local)
+
+> [!CAUTION]
+> `Motion@FlowType_H` の **タイミング＝自動・時間が負（退場）** の見た目が変わる（FlowType_K v0.3.4 の移植）．
+> v0.1.0 では退場が時間の半分で終わってその後消えていたのが，時間いっぱいまで続くようになる．
+> 退場は登場を時間反転した形になるので，順方向では**後ろの単位から**退場し始める（v0.1.0 は先頭から）．
+> 既存プロジェクトの自動の退場は，再読み込みすると動きが変わる．
+
+- `Motion@FlowType_H` の `モーション::順序`，`Island@FlowType_H` の `時間オフセット::順序` と `色調::順序`，`Repeat@FlowType_H` の `時間オフセット::順序` に **中央から／外側から** を末尾追加
+  - 並び（文字・オブジェクト・島・セルの番号順）の中央からの距離で順位を付け，左右対称の位置は同時に動く．段数は ceil(n/2)
+  - `Motion@FlowType_H` では開始時刻・手動タイミングの区間・重なりを強調だけが順位を使い，リリックの乱数・配置・選択形状は元の並びを使う（左右対称の 2 文字が同じ乱数にならない）
+  - `Island@FlowType_H` / `Repeat@FlowType_H` では個別オブジェクトの番号も順位の順に付く（同じ順位は並びの順）
+- `Motion@FlowType_H` と `Blink@FlowType_H` の `単語分割` に **文節（簡易）** を末尾追加
+- `単語分割` の新しく置いたときの既定を **強化（句読点・文字種）** にした（v0.1.0 まではヘッダーに既定値が無く、空白のみ（従来） になっていた。保存済みの作品の値は変わらない）
+  - かな→漢字，ひらがな／漢字→カタカナ，日本語→英字／数字，英字→漢字／カタカナの切り替わりで区切る（形態素解析ではない）
+  - 長音・小書きかな・濁点は直前の文字種に含める．英字に挟まれた `'` `’` `-` は語の内側（`don't`）．空白・句読点は直前の語に，開き括弧は次の語に付く．改行でも区切る
+- `Motion@FlowType_H` と `Blink@FlowType_H` の単語分割を共通の実装（`scripts/effects/words.lua`）にまとめた．`強化（句読点・文字種）` の区切りは v0.1.0 の `Motion@FlowType_H` と同じ
+- `Blink@FlowType_H` で `基準=単語`・`単語分割=強化` にすると，存在しない `utf8.codes` を呼んでスクリプトエラーになっていた問題の修正
+- FlowType_K v0.3.4 から移植: `Motion@FlowType_H` で `タイミング` が `自動` かつ `時間` が負のとき，退場モーションが途中で完了・消失していた問題の修正
+- FlowType_K v0.3.5 から移植: `Motion@FlowType_H` の `リリック::伸縮` / `リリック::ダイナミクス::ピーク` が極端な値のとき，GPU デバイス喪失で例外終了することがあった問題の修正（指数を ±6，倍率を ±256 に制限）
+- 同梱プリセット（`Motion@FlowType_H.Factory.Lyric` / `Stretch`）の項目名・選択肢を，日本語化後の項目名に書き直した（英語の項目名のままで値が読み込まれていなかった）
+- 既存の項目名・選択肢のラベルは変えていない（保存済みプロジェクトの値はそのまま読める）
+- スクリプトだけを生成・検査・配置する `build_scripts.py` を追加（C++ のビルドは走らせない）
+
+## v0.1.0 (FlowType_H local)
+
+- FlowType_K を FlowType_H として改名・再ビルド（モジュール `*@FlowType_H`）
+- Motion / Blink の Words に `単語分割`（空白のみ／強化）を追加（**UI 末尾配置**で旧 aup2 の位置ずれを回避）
+- `強化（句読点・文字種）`: 空白＋句読点＋CJK↔Latin／数字境界（形態素解析ではない）
+- Motion に **選択形状**（正方形／ランプアップ／ランプダウン／三角）と **選択フェザー** を末尾追加（AE Range Selector Shape 相当、M4）
+- UI 項目名・選択肢・グループ名・ラベルを日本語化（`--label:テキスト`）
+- `obj.setfont` 向けに文字色 `"f5f5f5"` 形式の数値化（`to_color`）を追加
+- VS 2022（MSVC 19.44）向けに関数 `constexpr` 要件を緩和してビルド可能に
+
 ## v0.3.3
 
 - テキスト取得時にエスケープ文字の修正を行っていなかった問題の修正
@@ -21,40 +82,40 @@
 ## v0.3.0
 
 > [!CAUTION]
-> エコーのバグ修正に伴い，既存プロジェクトを再読み込みすると `Motion@FlowType_K` と `Echo@FlowType_K` でエコーが1つ余分に追加される問題が発生する．
+> エコーのバグ修正に伴い，既存プロジェクトを再読み込みすると `Motion@FlowType_H` と `Echo@FlowType_H` でエコーが1つ余分に追加される問題が発生する．
 > そのため，以下の操作を行うことを推奨する．
-> - `Motion@FlowType_K` で `Echo::Count` を1つ小さく設定
-> - `Echo@FlowType_K` で `Count` を1つ小さく設定
+> - `Motion@FlowType_H` で `Echo::Count` を1つ小さく設定
+> - `Echo@FlowType_H` で `Count` を1つ小さく設定
 
 > [!CAUTION]
-> 点滅の仕様変更に伴い，既存プロジェクトを再読み込みすると `Motion@FlowType_K` と `Blink@FlowType_K` で 点滅ステップ数がリセットされる．
+> 点滅の仕様変更に伴い，既存プロジェクトを再読み込みすると `Motion@FlowType_H` と `Blink@FlowType_H` で 点滅ステップ数がリセットされる．
 > そのため，以下の操作を行うことを推奨する．
-> - `Motion@FlowType_K` でステップ数を再設定
-> - `Blink@FlowType_K` でステップ数を再設定
+> - `Motion@FlowType_H` でステップ数を再設定
+> - `Blink@FlowType_H` でステップ数を再設定
 
 - 一部プロパティメニュー名の変更
-- `Repeat@FlowType_K` を追加
+- `Repeat@FlowType_H` を追加
 - プロパティメニューに`プロパティ名をコピー`と`参照式をコピー`を追加
-- `Motion@FlowType_K` に `Offset` を追加
-- `Motion@FlowType_K` と `Blink@FlowType_K` に文字置換機能を追加
-- `Kerning@FlowType_K` に `Limit Effects Below` を追加
-- `Blink@FlowType_K` に `Based On` を追加
-- `Island@FlowType_K` で `Time Offset::Order` によって個別オブジェクトのインデックス付与順が変わるように変更
-- `Motion@FlowType_K` と `Blink@FlowType_K` で 点滅ステップ数を個別に設定できるように変更 (破壊的)
+- `Motion@FlowType_H` に `Offset` を追加
+- `Motion@FlowType_H` と `Blink@FlowType_H` に文字置換機能を追加
+- `Kerning@FlowType_H` に `Limit Effects Below` を追加
+- `Blink@FlowType_H` に `Based On` を追加
+- `Island@FlowType_H` で `Time Offset::Order` によって個別オブジェクトのインデックス付与順が変わるように変更
+- `Motion@FlowType_H` と `Blink@FlowType_H` で 点滅ステップ数を個別に設定できるように変更 (破壊的)
 - キャッシュ処理の修正
 - テキストオブジェクトの情報を必要とするエフェクトをフィルタ効果やグループ制御からかけれるように修正
 - 出力中はオーダー順序を表示しないように修正
-- `Motion@FlowType_K` で `Timing` が `Manual` の場合，退場モーションがおかしかった問題の修正
-- `Motion@FlowType_K` で リリックモーションの移動量と伸び量をリンクするように修正
-- `Motion@FlowType_K` で点滅させるとき使用する時間値が全体時間であった問題の修正
-- `Motion@FlowType_K` の点滅と `Blink@FlowType_K` の時間変化をFPS依存に修正
-- `Motion@FlowType_K` で `Effect::Parameters` のパース結果が消されていた場合エラーで止まる問題の修正
-- `Motion@FlowType_K` ， `Echo@FlowType_K` ， `Island@FlowType_K` で出力時間が範囲外になる問題を修正
-- `Motion@FlowType_K` および `Echo@FlowType_K` でエコーカウントが1つ大きかった問題の修正 (破壊的)
-- `Kerning@FlowType_K` でアラインメントを考慮するように修正
+- `Motion@FlowType_H` で `Timing` が `Manual` の場合，退場モーションがおかしかった問題の修正
+- `Motion@FlowType_H` で リリックモーションの移動量と伸び量をリンクするように修正
+- `Motion@FlowType_H` で点滅させるとき使用する時間値が全体時間であった問題の修正
+- `Motion@FlowType_H` の点滅と `Blink@FlowType_H` の時間変化をFPS依存に修正
+- `Motion@FlowType_H` で `Effect::Parameters` のパース結果が消されていた場合エラーで止まる問題の修正
+- `Motion@FlowType_H` ， `Echo@FlowType_H` ， `Island@FlowType_H` で出力時間が範囲外になる問題を修正
+- `Motion@FlowType_H` および `Echo@FlowType_H` でエコーカウントが1つ大きかった問題の修正 (破壊的)
+- `Kerning@FlowType_H` でアラインメントを考慮するように修正
 - テキスト分解で中心座標が正しくセットされない問題の修正
 - 中間点無視のトラックバーに対して `値を揃える` を使用するとクラッシュする問題の修正
-- `Trim@FlowType_K` のフィルタプラグイン化
+- `Trim@FlowType_H` のフィルタプラグイン化
 
 ## v0.2.0
 
@@ -62,15 +123,15 @@
 - プロパティメニュー`値を揃える`に`全ての区間`を追加
 - プロパティメニュー`値を反転`に`現在の区間`，`以前の区間`，`以降の区間`を追加
 - プロパティメニューに`エフェクトをコピー`を追加
-- `Motion@FlowType_K` の `Based On` が `Whole` 以外において，個別オブジェクト数が文字数の定数倍になる場合の挙動を追加
-- `Motion@FlowType_K` の `Based On` に `Objects` を追加 (個別オブジェクト毎を `Characters` からこれに変更)
-- `Kerning@FlowType_K` に影響度合いを指定する `Influence` を追加
-- `Kerning@FlowType_K` で個別オブジェクト数が文字数の定数倍になる場合の挙動を追加
-- `Motion@FlowType_K` の `Lyric` で退場時の伸縮が想定と逆になっていた問題を修正
+- `Motion@FlowType_H` の `Based On` が `Whole` 以外において，個別オブジェクト数が文字数の定数倍になる場合の挙動を追加
+- `Motion@FlowType_H` の `Based On` に `Objects` を追加 (個別オブジェクト毎を `Characters` からこれに変更)
+- `Kerning@FlowType_H` に影響度合いを指定する `Influence` を追加
+- `Kerning@FlowType_H` で個別オブジェクト数が文字数の定数倍になる場合の挙動を追加
+- `Motion@FlowType_H` の `Lyric` で退場時の伸縮が想定と逆になっていた問題を修正
 - トランスフォームのターゲットがローカル空間でもワールド空間でもない場合は変換処理が行われないように修正
-- `Align@FlowType_K` のフィルタプラグイン化
-- `Deform@FlowType_K` のフィルタプラグイン化
-- `Transform@FlowType_K` のフィルタプラグイン化
+- `Align@FlowType_H` のフィルタプラグイン化
+- `Deform@FlowType_H` のフィルタプラグイン化
+- `Transform@FlowType_H` のフィルタプラグイン化
 - プリセットの追加
 
 ## v0.1.0
