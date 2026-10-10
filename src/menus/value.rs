@@ -48,6 +48,21 @@ fn targets_empty(len: usize, st: i64, ed: i64) -> bool {
     take <= st
 }
 
+/// 「値を反転」の 1 つの値。先頭が `-` なら外し、それ以外は `-` を付ける。空と `0` で始まる値はそのまま。
+///
+/// `0` で始まる値を反転しないのは原作 value.cpp と同じ（0 を `-0.00` にしないための判定と思われる）。
+/// そのため `0.50` のような 1 未満の正の値も反転しない（負の `-0.50` は `-` を外すので `0.50` になる）。
+/// 原作との互換のため、この挙動は変えない。
+fn negate_number(v: &str) -> String {
+    if v.is_empty() || v.starts_with('0') {
+        return v.to_string();
+    }
+    match v.strip_prefix('-') {
+        Some(rest) => rest.to_string(),
+        None => format!("-{v}"),
+    }
+}
+
 pub fn overwrite(range: Range, handle: ObjectHandle, effect: &str, index: usize, item: &str) {
     let Some(ty) = item_type(effect, item) else {
         return;
@@ -123,10 +138,22 @@ pub fn overwrite(range: Range, handle: ObjectHandle, effect: &str, index: usize,
             .join(",");
         result.push_str(cfg);
 
-        if edit.set_object_effect_item(handle, &effect, index, &item, &result).is_ok() {
-            tracing::info!("Updated '{fx}:{item}'");
-        }
+        write_and_verify(edit, handle, &effect, index, &item, &result, &fx);
     });
+}
+
+/// 書いてから読み返し、入ったことを確かめる（ルール au2-rs-plugin「書き込みは読み返して確かめる」）。
+/// 本体は範囲の外の値を、成功を返したうえで範囲に収めて保存することがある
+fn write_and_verify(edit: &aviutl2::generic::EditSection, handle: ObjectHandle, effect: &str, index: usize, item: &str, value: &str, fx: &str) {
+    if let Err(e) = edit.set_object_effect_item(handle, effect, index, item, value) {
+        tracing::warn!("'{fx}:{item}' に書き込めませんでした: {e}");
+        return;
+    }
+    match edit.get_object_effect_item(handle, effect, index, item) {
+        Ok(read) if read == value => tracing::info!("Updated '{fx}:{item}'"),
+        Ok(read) => tracing::warn!("'{fx}:{item}' に書いた値が入っていません（書いた値: {value} / 読み返した値: {read}）"),
+        Err(e) => tracing::warn!("'{fx}:{item}' に書いた後、読み返せませんでした: {e}"),
+    }
 }
 
 pub fn invert(range: Range, handle: ObjectHandle, effect: &str, index: usize, item: &str) {
@@ -205,16 +232,7 @@ pub fn invert(range: Range, handle: ObjectHandle, effect: &str, index: usize, it
             EffectItemType::Integer | EffectItemType::Number => values
                 .iter()
                 .enumerate()
-                .map(|(i, v)| {
-                    if !v.is_empty() && in_range(i) && !v.starts_with('0') {
-                        match v.strip_prefix('-') {
-                            Some(rest) => rest.to_string(),
-                            None => format!("-{v}"),
-                        }
-                    } else {
-                        v.to_string()
-                    }
-                })
+                .map(|(i, v)| if in_range(i) { negate_number(v) } else { v.to_string() })
                 .collect::<Vec<_>>()
                 .join(","),
             _ => values
@@ -232,9 +250,7 @@ pub fn invert(range: Range, handle: ObjectHandle, effect: &str, index: usize, it
         };
         result.push_str(cfg);
 
-        if edit.set_object_effect_item(handle, &effect, index, &item, &result).is_ok() {
-            tracing::info!("Updated '{fx}:{item}'");
-        }
+        write_and_verify(edit, handle, &effect, index, &item, &result, &fx);
     });
 }
 
@@ -249,5 +265,18 @@ mod tests {
         assert_eq!(cfg_head("|12"), "12");
         assert!(targets_empty(3, 3, 5));
         assert!(!targets_empty(3, 0, 0));
+    }
+
+    #[test]
+    fn negate_number_keeps_original_behavior() {
+        assert_eq!(negate_number("5.00"), "-5.00");
+        assert_eq!(negate_number("-5.00"), "5.00");
+        assert_eq!(negate_number("12"), "-12");
+        assert_eq!(negate_number("-0.50"), "0.50");
+        assert_eq!(negate_number(""), "");
+        // 原作と同じく `0` で始まる値は反転しない
+        assert_eq!(negate_number("0.00"), "0.00");
+        assert_eq!(negate_number("0"), "0");
+        assert_eq!(negate_number("0.50"), "0.50");
     }
 }

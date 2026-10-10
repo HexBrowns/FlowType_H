@@ -222,6 +222,49 @@ fn group_alias(meta: &str, x: &str, y: &str, z: &str, rx: &str, ry: &str, rz: &s
     )
 }
 
+/// 元のテキストが `layer` にあるとき、空いている必要があるレイヤー（内側のグループ制御 1 つと `chars` 文字ぶん）。
+/// 外側のグループ制御は元のテキストのレイヤーに置くので入らない
+fn target_layers(layer: usize, chars: usize) -> std::ops::RangeInclusive<usize> {
+    layer + 1..=layer + 1 + chars
+}
+
+/// レイヤーを左から辿り、`[start, end]`（両端を含む）にかかる最初のオブジェクトの範囲を返す。
+///
+/// `find(from)` は `find_object_after(layer, from)` で見つけたオブジェクトの範囲。SDK（`plugin2.h` の `find_object`）の
+/// 説明は「指定のフレーム番号以降にあるオブジェクトを検索」だけで、開始が `from` より前にあって `from` にかかる
+/// オブジェクトを返すかは書かれていない（aviutl2-rs 0.48 の `find_object_after` も素通し）。
+/// `find(start)` だけを見ると、返さない場合に開始が前にあって範囲にかかるものを見落とすので、どちらでも漏れないように
+/// レイヤーの先頭（0）から辿る。
+fn first_overlap(mut find: impl FnMut(usize) -> Option<(usize, usize)>, start: usize, end: usize) -> Option<(usize, usize)> {
+    let mut from = 0;
+    loop {
+        let (s, e) = find(from)?;
+        if s > end {
+            return None;
+        }
+        if e >= start {
+            return Some((s, e));
+        }
+        if e < from {
+            // 先へ進まない（起きないはず）。空いているとは言い切れないので、かかっているとみなす
+            return Some((s, e));
+        }
+        from = e + 1;
+    }
+}
+
+/// エイリアスから `layer` の `start` に長さ `len` で作り、その位置に置かれたかを読み返す。
+/// 長さ 0（自動）だと、重なっても失敗せずに本体が空いている位置へずらして置くので、長さを指定する（ルール au2-rs-plugin）
+fn place(edit: &aviutl2::generic::EditSection, alias: &str, layer: usize, start: usize, len: usize) -> Result<aviutl2::generic::ObjectHandle, String> {
+    let h = edit.create_object_from_alias(alias, layer, start, len).map_err(|e| e.to_string())?;
+    let end = start + len - 1;
+    match edit.get_object_layer_frame(h) {
+        Ok(f) if (f.layer, f.start, f.end) == (layer, start, end) => Ok(h),
+        Ok(f) => Err(format!("{start}〜{end} に置いたつもりが {} レイヤー目の {}〜{} に置かれました", f.layer + 1, f.start, f.end)),
+        Err(e) => Err(format!("作ったオブジェクトの位置を読み返せません: {e}")),
+    }
+}
+
 fn split_text(edit: &mut aviutl2::generic::EditSection) {
     let handle = match edit.get_selected_objects() {
         Ok(v) if !v.is_empty() => {
@@ -289,16 +332,6 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
         tracing::error!("Failed to get the handle of the object");
         return;
     };
-    let occupied = |edit: &aviutl2::generic::EditSection, layer: usize| -> bool {
-        match edit.find_object_after(layer, info.start) {
-            Ok(Some(h)) => edit.get_object_layer_frame(h).map(|f| f.start <= info.end).unwrap_or(false),
-            _ => false,
-        }
-    };
-    if occupied(edit, info.layer + 1) {
-        tracing::error!("Target layer is occupied by another object");
-        return;
-    }
 
     let bytes = text.as_bytes();
     let mut chars: Vec<&str> = Vec::new();
@@ -309,10 +342,6 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
             return;
         };
         if !is_ctrl(cp) {
-            if occupied(edit, info.layer + chars.len() + 2) {
-                tracing::error!("Target layer is occupied by another object");
-                return;
-            }
             chars.push(&text[pos..end]);
         }
         pos = end;
@@ -325,11 +354,41 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
         return;
     }
 
+    // 元を消す前に、作るもの（内側のグループ制御と 1 文字ずつのテキスト）を置く場所が全部空いているかを確かめる。
+    // 外側のグループ制御は元のテキストの場所（消せば空く）に置く
+    let len = info.end - info.start + 1;
+    for layer in target_layers(info.layer, chars.len()) {
+        let found = first_overlap(
+            |from| {
+                let h = edit.find_object_after(layer, from).ok().flatten()?;
+                edit.get_object_layer_frame(h).ok().map(|f| (f.start, f.end))
+            },
+            info.start,
+            info.end,
+        );
+        if let Some((s, e)) = found {
+            tracing::error!(
+                "テキストを文字ごとに分解: {} レイヤー目の {}〜{} に別のオブジェクト（{s}〜{e}）があります。何も変えていません",
+                layer + 1,
+                info.start,
+                info.end
+            );
+            return;
+        }
+    }
+
     let meta_alias = meta.alias();
     if edit.delete_object(handle).is_err() {
         tracing::error!("Failed to delete the object");
         return;
     }
+    // ここから先で失敗したら、元のテキストは消えたまま途中で止まる。1 回の編集なので Ctrl+Z で戻せることを知らせる
+    let failed = |what: &str, layer: usize, e: String| {
+        tracing::error!(
+            "テキストを文字ごとに分解: 元のテキストを消した後、{what}（{} レイヤー目）を作れませんでした: {e}。途中で止めました。Ctrl+Z で分解する前に戻せます",
+            layer + 1
+        );
+    };
 
     let outer = group_alias(
         meta_alias,
@@ -343,11 +402,11 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
         chars.len() + 1,
         &shift_object_indices(remaining, -1),
     );
-    match edit.create_object_from_alias(&outer, info.layer, info.start, 0) {
+    match place(edit, &outer, info.layer, info.start, len) {
         Ok(h) => {
             let _ = edit.set_focus_object(Some(h));
         }
-        Err(e) => tracing::error!("Failed to create the group object: {e}"),
+        Err(e) => return failed("外側のグループ制御", info.layer, e),
     }
 
     let inner = group_alias(
@@ -362,8 +421,8 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
         chars.len(),
         "",
     );
-    if let Err(e) = edit.create_object_from_alias(&inner, info.layer + 1, info.start, 0) {
-        tracing::error!("Failed to create the group object: {e}");
+    if let Err(e) = place(edit, &inner, info.layer + 1, info.start, len) {
+        return failed("内側のグループ制御", info.layer + 1, e);
     }
 
     for (i, ch) in chars.iter().enumerate() {
@@ -380,8 +439,8 @@ fn split_text(edit: &mut aviutl2::generic::EditSection) {
             fx_xform.get("透明度", "0.00"),
             fx_xform.get("合成モード", "通常"),
         );
-        if let Err(e) = edit.create_object_from_alias(&alias, info.layer + i + 2, info.start, 0) {
-            tracing::error!("Failed to create the text object: {e}");
+        if let Err(e) = place(edit, &alias, info.layer + i + 2, info.start, len) {
+            return failed(&format!("{} 文字目のテキスト「{ch}」", i + 1), info.layer + i + 2, e);
         }
     }
 
@@ -406,6 +465,39 @@ mod tests {
         assert_eq!(alignment_base("縦書 上寄[右]"), 9);
         assert_eq!(alignment_base("縦書 中央[中]"), 13);
         assert_eq!(alignment_base("縦書 下寄[左]"), 17);
+    }
+
+    #[test]
+    fn target_layers_cover_inner_group_and_each_char() {
+        // 元が 3 レイヤー目（2）で 4 文字: 内側のグループ制御が 3、文字が 4〜7
+        assert_eq!(target_layers(2, 4), 3..=7);
+        assert_eq!(target_layers(0, 2).count(), 3);
+    }
+
+    /// 同じレイヤーの並び（開始順）に対する `find_object_after` の 2 通りの解釈
+    fn finder(objects: &'static [(usize, usize)], covering: bool) -> impl FnMut(usize) -> Option<(usize, usize)> {
+        move |from| objects.iter().copied().find(|&(s, e)| if covering { e >= from } else { s >= from })
+    }
+
+    #[test]
+    fn first_overlap_finds_objects_starting_before_the_range() {
+        const OBJECTS: &[(usize, usize)] = &[(0, 9), (20, 40), (50, 60)];
+        for covering in [false, true] {
+            // 開始が前にあって範囲にかかる
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 30, 35), Some((20, 40)), "covering={covering}");
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 35, 55), Some((20, 40)), "covering={covering}");
+            // 端が接するだけでも重なる（両端を含む）
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 40, 45), Some((20, 40)), "covering={covering}");
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 45, 50), Some((50, 60)), "covering={covering}");
+            // 隙間
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 10, 19), None, "covering={covering}");
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 41, 49), None, "covering={covering}");
+            assert_eq!(first_overlap(finder(OBJECTS, covering), 61, 100), None, "covering={covering}");
+            assert_eq!(first_overlap(finder(&[], covering), 0, 100), None, "covering={covering}");
+        }
+        // 前の検査（find(start) の 1 つだけを見る）は、開始より後のものしか返さない解釈だと (20, 40) を見落とす
+        let mut f = finder(OBJECTS, false);
+        assert_eq!(f(30), Some((50, 60)));
     }
 
     /// 実際のフォント（Arial）で並べる。

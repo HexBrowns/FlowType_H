@@ -10,7 +10,7 @@
 [project]
 id = "HexBrowns.FlowType_H"
 name = "FlowType_H"
-version = "0.3.1"
+version = "0.3.2"
 
 [artifacts."FlowType_H.aux2"]
 build = "cargo build --release"
