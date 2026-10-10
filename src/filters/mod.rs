@@ -29,7 +29,47 @@ pub fn fail<U: aviutl2::filter::FilterUserdata>(
     stop(video)
 }
 
+/// 本体の画像の一辺の上限（`obj.getinfo("image_max")` と同じ。ルール `au2-conventions`「API 重要事項」）
+pub const MAX_IMAGE_SIZE: u32 = 16384;
+
 /// 0 で埋めた画素（大きさだけを変えたいときに渡す。原作は nullptr を渡していた）。
-pub fn zeros(width: u32, height: u32) -> Vec<u8> {
-    vec![0u8; width as usize * height as usize * 4]
+///
+/// 一辺が `MAX_IMAGE_SIZE` を超えるか、確保に失敗したら `None`。`vec!` は確保に失敗すると abort して本体ごと落ちる
+/// （変形のスケールや位置を大きくすると数十 GB を求めることがある）ので、失敗を返せる `try_reserve_exact` で確保する。
+pub fn zeros(width: u32, height: u32) -> Option<Vec<u8>> {
+    zeroed_bytes(width, height, 4)
+}
+
+/// 作る画像が上限を超えたことを、効果ごとに初回だけログへ出す（毎フレーム出すとログが埋まる）
+pub fn too_large_once(warned: &std::sync::atomic::AtomicBool, effect: &str, w: i64, h: i64) {
+    if !warned.swap(true, std::sync::atomic::Ordering::Relaxed) {
+        tracing::warn!("{effect}: 結果の大きさ {w}x{h} が上限 {MAX_IMAGE_SIZE} を超えるので描きません（以降は出しません）");
+    }
+}
+
+/// `width * height * bytes_per_pixel` バイトを 0 で確保する。上限と失敗は `zeros` と同じ
+pub fn zeroed_bytes(width: u32, height: u32, bytes_per_pixel: usize) -> Option<Vec<u8>> {
+    if width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE {
+        return None;
+    }
+    let len = (width as usize).checked_mul(height as usize)?.checked_mul(bytes_per_pixel)?;
+    let mut v = Vec::new();
+    v.try_reserve_exact(len).ok()?;
+    v.resize(len, 0);
+    Some(v)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zeros_limits() {
+        assert_eq!(zeros(2, 3).map(|v| v.len()), Some(24));
+        assert_eq!(zeroed_bytes(2, 3, 8).map(|v| v.len()), Some(48));
+        // 一辺が上限を超えると確保せずに None（変形でスケール 10000% を FHD に掛けた大きさ）
+        assert!(zeros(192_000, 108_000).is_none());
+        assert!(zeros(MAX_IMAGE_SIZE + 1, 1).is_none());
+        assert!(zeros(1, MAX_IMAGE_SIZE + 1).is_none());
+    }
 }

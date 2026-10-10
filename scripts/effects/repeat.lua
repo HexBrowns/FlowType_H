@@ -1,7 +1,7 @@
 --@リピート
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:リピート@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:リピート@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 --group:レイアウト,true
@@ -29,7 +29,7 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local clamp, copy_xform, stop = utils.clamp, utils.copy_xform, utils.stop
-    -- to_style / to_number は utilities.lua の #include 展開で定義される
+    local to_style, to_number = utils.to_style, utils.to_number
 
     --#include "order.lua"
     local order_utils = require("order")
@@ -214,7 +214,7 @@ do
 
         if should_highlight_order and not getinfo("saving") then
             pixelshader(
-                "tint@モーション@${SCRIPT_NAME}",
+                "tint@モーション@${PROJECT_NAME}",
                 "object",
                 "object",
                 { 1.0, 0.0, 0.0, 1.0, 1.0 - k / max(m - 1, 1) }

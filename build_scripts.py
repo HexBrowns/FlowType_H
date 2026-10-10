@@ -7,10 +7,8 @@
     python AI/plugins/FlowType_H/build_scripts.py --no-deploy --expect-identical
                                                                      # 配置済みとバイト一致を確かめる
 
-`astra build` は C++ プラグインのビルド（vcpkg が要る）も走らせるので使わない。
-astra の `Builder` をスクリプトにだけ使う（`astra.toml` の `[[build.scripts]]`）。
-手を付けていない正本から作った `.anm2` が、配置済みの
-`Script/FlowType_H/@FlowType_H.anm2` とバイト単位で一致することを確認済み（2026-09-16）。
+Korarei 氏の astra（**0.7.1 以降**。色の初期値 `nil` を通すのは 0.7.1 から。`astra.exe`、設定形式 version 2）の
+`astra build effect --release` を呼ぶ。`astra.toml` にはスクリプトのビルドだけを書いてある。
 
 **`Script/FlowType_H/@FlowType_H.anm2` は生成物。直接編集しない。**
 正本は `scripts/effects/*.lua`（`motion.lua` ほか。`#include` される `utilities.lua` など）。
@@ -18,14 +16,15 @@ astra の `Builder` をスクリプトにだけ使う（`astra.toml` の `[[buil
 手順
 ----
 
-1. `build/astra/scripts/effect/@FlowType_H.anm2` へ生成する（`build/` は `.gitignore` 対象）
-2. 形を検査する: UTF-8 BOM 無し、先頭が `@モーション`、セクションが astra.toml の sources と同数
+1. `build/effect/release/@FlowType_H.anm2` へ生成する（`build/` は `.gitignore` 対象。
+   同じ場所に出る多言語化のひな形 `Default.FlowType_H.aul2` は使わない）
+2. 形を検査する: UTF-8 BOM 無し、先頭が `@モーション`、セクションが astra.toml の targets と同数
 3. `AI/tools/check_lua_syntax.py` に通す（マルチセクションをセクション単位で luaJIT に読ませる）
 4. 配置済みと比べる（一致 / 相違を出す。`--expect-identical` なら相違で終了コード 1）
 5. 配置する（`--no-deploy` で省略）
    - `Script/FlowType_H/@FlowType_H.anm2`
    - `Preset/` へ `presets/*.preset`
-   - `Script/FlowType_H/` へ `*.md` と `LICENSE`（astra.toml の release.contents と同じ）
+   - `Script/FlowType_H/` へ `*.md` と `LICENSE`（aviutl2.toml の artifacts と同じ）
    配置後に読み戻してバイト一致を確かめる
 
 UI 定義（`--track@` `--select@` など）を変えたときは、配置しても
@@ -36,15 +35,18 @@ UI 定義（`--track@` `--select@` など）を変えたときは、配置して
 
 import argparse
 import io
-import os
+import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent                   # AI/plugins/FlowType_H
 ROOT = HERE.parents[2]                                   # C:\ProgramData\aviutl2
-BUILD_DIR = HERE / "build" / "astra"
+BUILD_ID = "effect"
+OUTPUT = HERE / "build" / BUILD_ID / "release" / "@FlowType_H.anm2"
+ASTRA_MIN = (0, 7, 1)
 DEPLOY_SCRIPT = ROOT / "Script" / "FlowType_H" / "@FlowType_H.anm2"
 DEPLOY_DOC_DIR = ROOT / "Script" / "FlowType_H"
 DEPLOY_PRESET_DIR = ROOT / "Preset"
@@ -59,34 +61,39 @@ def say(text=""):
     OUT.flush()
 
 
-def generate():
-    """astra の Builder でスクリプトだけを生成し、生成物のパスを返す。"""
-    try:
-        from astra._internal.build import Builder
-        from astra._internal.config import Build, Config
-    except ImportError as e:
-        say("[ERROR] astra を読み込めない: %s" % e)
+def find_astra():
+    """PATH 上の astra が 0.7.1 以降であることを確かめて、そのパスを返す。"""
+    exe = shutil.which("astra")
+    if not exe:
+        say("[ERROR] astra が PATH に無い（0.7.1 以降の astra.exe を入れる）")
         sys.exit(2)
+    r = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8")
+    m = re.search(r"(\d+)\.(\d+)\.(\d+)", r.stdout)
+    if r.returncode != 0 or not m or tuple(map(int, m.groups())) < ASTRA_MIN:
+        say("[ERROR] astra が 0.7.1 より古いか、版が読めない（%s: %s）"
+            % (exe, (r.stdout or r.stderr).strip()))
+        sys.exit(2)
+    return exe
 
-    cwd = os.getcwd()
-    os.chdir(str(HERE))                                  # astra.toml の相対パスはここ基準
-    try:
-        cfg = Config(HERE / "astra.toml").load(Build)
-        builder = Builder(BUILD_DIR, cfg.root, "release")
-        produced = []
-        expected_sources = 0
-        for script in cfg.scripts:
-            expected_sources += sum(len(s.files) for s in script.sources)
-            for p in builder.build(script):
-                produced.append(Path(p))
-    finally:
-        os.chdir(cwd)
 
-    anm2 = [p for p in produced if p.suffix == ".anm2"]
-    if len(anm2) != 1:
-        say("[ERROR] 生成物の .anm2 が 1 つではない: %s" % [str(p) for p in produced])
+def generate():
+    """astra build で release のスクリプトを生成し、生成物のパスとセクションの期待数を返す。"""
+    exe = find_astra()
+    with open(HERE / "astra.toml", "rb") as f:
+        expected_sources = len(tomllib.load(f)["builds"][BUILD_ID]["targets"])
+
+    if OUTPUT.exists():
+        OUTPUT.unlink()                                  # 前回の生成物を今回のものと取り違えない
+    r = subprocess.run([exe, "build", BUILD_ID, "--release"], cwd=str(HERE),
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    log = re.sub(r"\x1b\[[0-9;]*m", "", (r.stdout or "") + (r.stderr or ""))
+    for ln in log.splitlines():
+        if ln.strip():
+            say("[astra] " + ln.strip())
+    if r.returncode != 0 or not OUTPUT.is_file():
+        say("[ERROR] astra build が失敗した（終了コード %d）" % r.returncode)
         sys.exit(1)
-    return anm2[0], expected_sources
+    return OUTPUT, expected_sources
 
 
 def check_shape(path, expected_sections):
@@ -101,7 +108,7 @@ def check_shape(path, expected_sections):
     text = data.decode("utf-8")
     sections = [ln for ln in text.splitlines() if ln.startswith("@")]
     if len(sections) != expected_sections:
-        say("[ERROR] セクション数 %d（astra.toml の sources は %d）: %s"
+        say("[ERROR] セクション数 %d（astra.toml の targets は %d）: %s"
             % (len(sections), expected_sections, sections))
         ok = False
     else:
@@ -133,10 +140,13 @@ def compare(generated):
     la = a.decode("utf-8").splitlines()
     lb = b.decode("utf-8").splitlines()
     import difflib
-    changed = sum(1 for ln in difflib.unified_diff(lb, la, lineterm="", n=0)
-                  if ln[:1] in "+-" and not ln.startswith(("+++", "---")))
-    say("[INFO] 配置済みと相違（生成 %d バイト / 配置済み %d バイト、差分 %d 行）"
-        % (len(a), len(b), changed))
+    # unified_diff の出力から数えると、Lua のコメント行（-- で始まる）を消した行が
+    # 見出しの --- と見分けられずに落ちるので、opcodes から数える
+    changed = sum(max(i2 - i1, j2 - j1)
+                  for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, lb, la, autojunk=False).get_opcodes()
+                  if tag != "equal")
+    note = "差分 %d 行" % changed if changed else "行の中身は同じ。改行コードなどの違い"
+    say("[INFO] 配置済みと相違（生成 %d バイト / 配置済み %d バイト、%s）" % (len(a), len(b), note))
     return False
 
 

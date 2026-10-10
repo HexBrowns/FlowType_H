@@ -1,7 +1,7 @@
 --@カーニング
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:カーニング@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:カーニング@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 local kerning_mode = 1 --select@kerning_mode:カーニング方式=1,なし=0,メトリクス=1
@@ -264,7 +264,7 @@ do
         if tint_color ~= nil then
             local r, g, b = RGB(tint_color)
             obj.pixelshader(
-                "tint@モーション@${SCRIPT_NAME}",
+                "tint@モーション@${PROJECT_NAME}",
                 "object",
                 "object",
                 { r / 255.0, g / 255.0, b / 255.0, 1.0, tint_opacity * influence }

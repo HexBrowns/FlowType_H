@@ -1,7 +1,7 @@
 --@モーション
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:モーション@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:モーション@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 local timing = 0 --select@timing:タイミング,自動=0,手動=1
@@ -12,7 +12,7 @@ local offset = 0.0 --track@offset:オフセット,-1000,1000,0,0.001
 local motion_based_on = 0 --select@motion_based_on:モーション::基準,${BASED_ON}
 local motion_order = 0 --select@motion_order:モーション::順序,順方向=0,逆方向=1,ランダム=2,中央から=3,外側から=4
 local motion_overlap = 100.0 --track@motion_overlap:モーション::重なり,0,100,100,0.01
-local motion_softness = 0.0 --track@motion_softness:モーション::柔らかさ,0,100,100,0.01
+local motion_softness = 100.0 --track@motion_softness:モーション::柔らかさ,0,100,100,0.01
 --track0:モーション::カーブ,0,1,0,0.001
 local motion_cutoff = 0.0 --track@motion_cutoff:モーション::カットオフ,-10000,10000,0,0.001
 local motion_should_mask = false --checksection@motion_should_mask:モーション::マスク,false,false
@@ -84,7 +84,7 @@ local tint_layer = 0 --track@tint_layer:色調::レイヤー,-100,100,0,1,---
 local effect_params = "" --text@effect_params:エフェクト::パラメータ,
 --group:残像,false
 local echo_count = 0 --track@echo_count:残像::個数,0,100,0,1,---
-local echo_interval = 0.0 --track@echo_interval:残像::間隔,-100,100,-1,0.001
+local echo_interval = -1.0 --track@echo_interval:残像::間隔,-100,100,-1,0.001
 local echo_decay = 50.0 --track@echo_decay:残像::減衰,0,100,50,0.01
 local echo_composite = 1 --select@echo_composite:残像::合成順=1,上=0,下=1
 --group:追加オプション,false
@@ -121,7 +121,7 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local lerp, clamp, copy_xform, stop = utils.lerp, utils.clamp, utils.copy_xform, utils.stop
-    -- to_color / to_style / to_number は utilities.lua の #include 展開で定義される
+    local to_color, to_style, to_number = utils.to_color, utils.to_style, utils.to_number
 
     --#include "order.lua"
     local order_utils = require("order")

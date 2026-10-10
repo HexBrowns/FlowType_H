@@ -224,7 +224,13 @@ fn group_alias(meta: &str, x: &str, y: &str, z: &str, rx: &str, ry: &str, rz: &s
 
 fn split_text(edit: &mut aviutl2::generic::EditSection) {
     let handle = match edit.get_selected_objects() {
-        Ok(v) if !v.is_empty() => v[0],
+        Ok(v) if !v.is_empty() => {
+            // 分解は 1 回に 1 個（原作と同じ）。黙って残りを捨てないように知らせる
+            if v.len() > 1 {
+                tracing::warn!("テキストを文字ごとに分解: {} 個選ばれていますが、分解するのは 1 個目だけです", v.len());
+            }
+            v[0]
+        }
         _ => {
             tracing::error!("Failed to get the handle of the object");
             return;

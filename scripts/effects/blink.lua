@@ -1,12 +1,12 @@
 --@点滅
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:点滅@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:点滅@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 --#define BASED_ON 全体=-2,オブジェクト=-1,文字=0,文字（空白除く）=1,単語=2,行=3
 local based_on = 0 --select@based_on:基準,${BASED_ON}
-local duration = 0.0 --track@duration:時間,-10000,10000,8,0.001,---
+local duration = 8.0 --track@duration:時間,-10000,10000,8,0.001,---
 --group:不透明度,true
 local opacity_steps = 2 --track@opacity_steps:不透明度::段階,2,128,2,1
 local opacity_min = 0.0 --track@opacity_min:不透明度::最小,0,100,0,0.01
@@ -43,7 +43,7 @@ do
     --#include "utilities.lua"
     local utils = require("utilities")
     local lerp, copy_xform, stop = utils.lerp, utils.copy_xform, utils.stop
-    -- to_color / to_style / to_number は utilities.lua の #include 展開で定義される
+    local to_color, to_style, to_number = utils.to_color, utils.to_style, utils.to_number
 
     --#include "words.lua"
     local words_utils = require("words")
@@ -315,7 +315,7 @@ do
                     1
                 )
 
-                pixelshader("alpha_mask@モーション@${SCRIPT_NAME}", "cache:tmp", "object", { 0.0 }, "mask")
+                pixelshader("alpha_mask@モーション@${PROJECT_NAME}", "cache:tmp", "object", { 0.0 }, "mask")
 
                 if not copybuffer("object", "cache:tmp") then
                     error("Failed to copy buffer")
@@ -358,7 +358,7 @@ do
                 end
 
                 pixelshader(
-                    "map@モーション@${SCRIPT_NAME}",
+                    "map@モーション@${PROJECT_NAME}",
                     "cache:tmp",
                     { "cache:tmp", "object" },
                     { r, 0.5 },

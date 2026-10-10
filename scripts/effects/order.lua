@@ -32,8 +32,6 @@ do
     end
 end
 
-if ... then
-    return {
-        order_rank = order_rank,
-    }
-end
+return {
+    order_rank = order_rank,
+}

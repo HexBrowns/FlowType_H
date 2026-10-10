@@ -1,13 +1,13 @@
 --@パーツ分解
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:パーツ分解@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:パーツ分解@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 local threshold = 0.0 --track@threshold:しきい値,0,100,0,0.01
 local index = -1 --track@index:インデックス,-1,100,-1,1
 --group:アンカー,true
-local anchor_target = 0 --select@anchor_target:アンカー::対象=1,ピボット=0,位置=1
+local anchor_target = 1 --select@anchor_target:アンカー::対象=1,ピボット=0,位置=1
 local anchor_should_overwrite = false --checksection@anchor_should_overwrite:アンカー::上書き,false,false
 --group:並べ替え,false
 --separator:順序
@@ -169,7 +169,7 @@ do
                 t = rand1(-seed, i)
             end
 
-            pixelshader("map@モーション@${SCRIPT_NAME}", "object", { "object", CACHE_LUT }, { t, 0.5 }, "copy", "clamp")
+            pixelshader("map@モーション@${PROJECT_NAME}", "object", { "object", CACHE_LUT }, { t, 0.5 }, "copy", "clamp")
         end
     end
 
@@ -328,7 +328,7 @@ do
                     stop("Failed to copy buffer")
                     return
                 end
-                pixelshader("alpha_mask@モーション@${SCRIPT_NAME}", "object", CACHE_ALPHA_MASK, { 1.0 }, "mask")
+                pixelshader("alpha_mask@モーション@${PROJECT_NAME}", "object", CACHE_ALPHA_MASK, { 1.0 }, "mask")
                 copy_xform(obj, xform)
             end
         else
@@ -345,7 +345,7 @@ do
 
         if should_highlight_order and not getinfo("saving") then
             pixelshader(
-                "tint@モーション@${SCRIPT_NAME}",
+                "tint@モーション@${PROJECT_NAME}",
                 "object",
                 "object",
                 { 1.0, 0.0, 0.0, 1.0, 1.0 - k / max(m - 1, 1) }

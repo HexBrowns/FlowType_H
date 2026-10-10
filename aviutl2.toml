@@ -1,0 +1,61 @@
+#:schema ./.aviutl2-cli/aviutl2.schema.json
+#
+# ビルドと配布の設定（aviutl2-cli: https://github.com/sevenc-nanashi/aviutl2-cli）。
+#   au2 release   テストしてからビルドし、release/ に au2pkg とカタログ用の catalog.json を作る
+# project.version は Cargo.toml の version と揃える。
+#
+# スクリプト（@FlowType_H.anm2）は build_scripts.py が scripts/effects/*.lua から生成する（astra が要る）。
+# 原作の C++ プラグイン（plugins/）と astra.toml の [release] は使わない。
+
+[project]
+id = "HexBrowns.FlowType_H"
+name = "FlowType_H"
+version = "0.3.1"
+
+[artifacts."FlowType_H.aux2"]
+build = "cargo build --release"
+source = "target/release/flowtype_h.dll"
+destination = "Plugin/FlowType_H/FlowType_H.aux2"
+
+[artifacts."@FlowType_H.anm2"]
+build = "python build_scripts.py --no-deploy"
+source = "build/effect/release/@FlowType_H.anm2"
+destination = "Script/FlowType_H/@FlowType_H.anm2"
+
+[artifacts."README.md"]
+source = "README.md"
+destination = "Script/FlowType_H/README.md"
+
+[artifacts."CHANGELOG.md"]
+source = "CHANGELOG.md"
+destination = "Script/FlowType_H/CHANGELOG.md"
+
+[artifacts."LICENSE"]
+source = "LICENSE"
+destination = "Script/FlowType_H/LICENSE"
+
+[artifacts."THIRD_PARTY_LICENSES.md"]
+source = "THIRD_PARTY_LICENSES.md"
+destination = "Script/FlowType_H/THIRD_PARTY_LICENSES.md"
+
+[artifacts."モーション@FlowType_H.Factory.Lyric.preset"]
+source = "presets/モーション@FlowType_H.Factory.Lyric.preset"
+destination = "Preset/モーション@FlowType_H.Factory.Lyric.preset"
+
+[artifacts."モーション@FlowType_H.Factory.Stretch.preset"]
+source = "presets/モーション@FlowType_H.Factory.Stretch.preset"
+destination = "Preset/モーション@FlowType_H.Factory.Stretch.preset"
+
+[release]
+# テストの後、インストール時のダイアログに本体・原作・依存クレートのライセンスを出す
+prebuild = [
+    "cargo test --release",
+    'copy /b /y LICENSE + THIRD_PARTY_LICENSES.md + THIRD_PARTY_CRATES.md release\package.txt >nul',
+]
+package_template = "release/package.txt"
+package_information = "{name} v{version} by HexBrowns"
+
+[catalog]
+id = "HexBrowns.FlowType_H"
+license_path = { type = "MIT", path = "./LICENSE" }
+download_repo = { owner = "HexBrowns", repo = "FlowType_H" }

@@ -9,7 +9,14 @@ use aviutl2::filter::{
 };
 use aviutl2::AnyResult;
 
-use super::{fail, information, stop, zeros, LABEL};
+use super::{fail, information, stop, too_large_once, zeros, LABEL};
+
+/// 変形後の大きさが上限を超えたとき。描かずに止め、ログは初回だけ出す
+fn too_large(video: &mut FilterProcVideo<()>, w: i64, h: i64) -> AnyResult<()> {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    too_large_once(&WARNED, "変形@FlowType_H", w, h);
+    stop(video)
+}
 use crate::rotation::to_rad;
 
 #[derive(aviutl2::filter::FilterConfigSelectItems, Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,17 +158,24 @@ fn deform(cfg: &Config, video: &mut FilterProcVideo<()>) -> AnyResult<()> {
 
     let max_x = verts.iter().map(|v| v[0].abs()).fold(f32::MIN, f32::max);
     let max_y = verts.iter().map(|v| v[1].abs()).fold(f32::MIN, f32::max);
-    let w = max_x.ceil() as i32 * 2;
-    let h = max_y.ceil() as i32 * 2;
+    // i64 で数える（i32 のまま 2 倍すると、大きなスケールで桁あふれする）
+    let w = max_x.ceil() as i64 * 2;
+    let h = max_y.ceil() as i64 * 2;
     if w <= 0 || h <= 0 {
         return stop(video);
     }
-    let (w, h) = (w as u32, h as u32);
+    // 本体の画像の上限を超える大きさは作れない。確保すると数十 GB になり本体ごと落ちるので、描かずに止める
+    let (Ok(w), Ok(h)) = (u32::try_from(w), u32::try_from(h)) else {
+        return too_large(video, w, h);
+    };
+    let Some(pixels) = zeros(w, h) else {
+        return too_large(video, w as i64, h as i64);
+    };
 
     video.set_sampler_mode(if cfg.sampling == Sampling::Nearest { SamplerMode::Dot } else { SamplerMode::Clamp });
 
     let result = ImageResource::Resource("result".to_string());
-    video.create_image_resource(&result, &zeros(w, h), w, h)?;
+    video.create_image_resource(&result, &pixels, w, h)?;
     if video.clear_image_resource(&result, RgbaPixel { r: 0, g: 0, b: 0, a: 0 }).is_err() {
         return fail(video, "Failed to clear buffer");
     }

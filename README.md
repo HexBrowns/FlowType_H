@@ -744,17 +744,16 @@ AviUtl2 を終了してから，`Plugin/FlowType_H/` と `Script/FlowType_H/` �
 Rust（stable）・MSVC（HarfBuzz を C++ のソースからビルドする）・Windows SDK（シェーダーを `fxc` でコンパイルする）が要る．
 
 ```powershell
-.\build.ps1             # テスト → リリースビルド → Plugin\FlowType_H\ へ配置
-.\build.ps1 -NoDeploy   # 配置せずにビルドだけ
-.\build.ps1 -SkipTest   # テストを飛ばす
+au2 release   # テスト → リリースビルド → スクリプトの生成 → release\ に au2pkg
 ```
 
-成果物は `target\release\FlowType_H.aux2`．配置先は `build.ps1` の `$AviUtl2Root`（既定 `C:\ProgramData\aviutl2`）で変える．
+[aviutl2-cli](https://github.com/sevenc-nanashi/aviutl2-cli) の `au2` を使う．ビルドと同梱物は `aviutl2.toml` に書いてある．できた `.au2pkg.zip` を AviUtl2 のプレビューへドラッグ&ドロップすると導入できる．
 
 ### スクリプト（`@FlowType_H.anm2`）
 
-`scripts/effects/*.lua` から，Korarei 氏の astra（0.6.4 以降．Python パッケージ `astra`）の `[[build.scripts]]`（`astra.toml`）で生成する．
-`astra build` は原作の C++ プラグインのビルドも走らせるので使わず，スクリプトだけを作る `build_scripts.py` を使う．
+`scripts/effects/*.lua` から，Korarei 氏の [astra](https://github.com/korarei/AviUtl2_Astra)（0.7.1 以降．`astra.exe`）で生成する．
+`astra.toml`（設定形式 version 2）にはスクリプトのビルド `[builds.effect]` だけを書いてある．
+`build_scripts.py` が `astra build effect --release` を呼び，検査と配置まで行う．
 
 ```powershell
 python build_scripts.py                                 # 生成 → 検査 → 配置
@@ -762,7 +761,7 @@ python build_scripts.py --no-deploy                     # 生成と検査だけ
 python build_scripts.py --no-deploy --expect-identical  # 配置済みとバイト一致かを確かめる
 ```
 
-生成物は `build/astra/scripts/effect/@FlowType_H.anm2`．配置すると `Script/FlowType_H/` と `Preset/` へ置く．
+生成物は `build/effect/release/@FlowType_H.anm2`．配置すると `Script/FlowType_H/` と `Preset/` へ置く．
 `build_scripts.py` は配置先と Lua の構文検査のツールの場所を作者の作業環境に合わせてあるので，ほかの環境では書き換えて使う．
 
 ## ライセンス

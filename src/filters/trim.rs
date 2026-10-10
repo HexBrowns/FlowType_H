@@ -12,7 +12,14 @@ use aviutl2::filter::{
 use aviutl2::AnyResult;
 use half::f16;
 
-use super::{fail, information, stop, zeros, LABEL};
+use super::{fail, information, stop, too_large_once, zeroed_bytes, zeros, LABEL};
+
+/// 大きさが上限を超えたとき。描かずに止め、ログは初回だけ出す
+fn too_large(video: &mut FilterProcVideo<()>, w: i64, h: i64) -> AnyResult<()> {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    too_large_once(&WARNED, "トリミング@FlowType_H", w, h);
+    stop(video)
+}
 
 const BLIT: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/blit.cso"));
 
@@ -86,7 +93,10 @@ fn trim(cfg: &Config, video: &mut FilterProcVideo<()>) -> AnyResult<()> {
         return fail(video, "Failed to copy buffer");
     }
 
-    let mut data = vec![0u8; w as usize * h as usize * 8];
+    // 半精度 RGBA（1 画素 8 バイト）。確保に失敗しても abort しないように（`zeroed_bytes`）
+    let Some(mut data) = zeroed_bytes(w, h, 8) else {
+        return too_large(video, w as i64, h as i64);
+    };
     if w == 0
         || h == 0
         || video
@@ -126,7 +136,11 @@ fn trim(cfg: &Config, video: &mut FilterProcVideo<()>) -> AnyResult<()> {
     }
 
     let (sw, sh) = (size[0] as u32, size[1] as u32);
-    video.set_image_data(&zeros(sw, sh), sw, sh);
+    // 余白を大きくすると上限を超える。確保すると本体ごと落ちうるので、描かずに止める
+    let Some(pixels) = zeros(sw, sh) else {
+        return too_large(video, sw as i64, sh as i64);
+    };
+    video.set_image_data(&pixels, sw, sh);
     if video.clear_image_resource(&ImageResource::Object, RgbaPixel { r: 0, g: 0, b: 0, a: 0 }).is_err() {
         return fail(video, "Failed to clear buffer");
     }

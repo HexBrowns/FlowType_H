@@ -59,14 +59,12 @@ do
     end
 end
 
-if ... then
-    return {
-        lerp = lerp,
-        clamp = clamp,
-        copy_xform = copy_xform,
-        stop = stop,
-        to_color = to_color,
-        to_style = to_style,
-        to_number = to_number,
-    }
-end
+return {
+    lerp = lerp,
+    clamp = clamp,
+    copy_xform = copy_xform,
+    stop = stop,
+    to_color = to_color,
+    to_style = to_style,
+    to_number = to_number,
+}

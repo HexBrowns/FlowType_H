@@ -243,8 +243,6 @@ do
     end
 end
 
-if ... then
-    return {
-        word_groups = word_groups,
-    }
-end
+return {
+    word_groups = word_groups,
+}

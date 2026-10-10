@@ -1,13 +1,13 @@
 --@残像
 
---require:${PROJECT_REQUIRES_AVIUTL2}
---information:残像@${SCRIPT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
+--require:${AVIUTL2_VERSION}
+--information:残像@${PROJECT_NAME} v${PROJECT_VERSION} by ${PROJECT_AUTHOR}
 --label:${LABEL}
 
 local count = 2 --track@count:個数,0,100,2,1
-local interval = 0.0 --track@interval:間隔,-100,100,-1,0.001
+local interval = -1.0 --track@interval:間隔,-100,100,-1,0.001
 local decay = 50.0 --track@decay:減衰,0,100,50,0.01
-local composite = 0 --select@composite:合成順=1,上=0,下=1
+local composite = 1 --select@composite:合成順=1,上=0,下=1
 --group:色調
 local tint_source = 0 --select@tint_source:色調::ソース,画像=0,レイヤー=1
 local tint_image = "" --file@tint_image:色調::画像,""
@@ -121,7 +121,7 @@ do
 
         if should_load_lut then
             pixelshader(
-                "map@モーション@${SCRIPT_NAME}",
+                "map@モーション@${PROJECT_NAME}",
                 "object",
                 { "object", CACHE_LUT },
                 { j / (count - 1), 0.5 },
